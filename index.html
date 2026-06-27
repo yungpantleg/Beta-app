@@ -1,0 +1,1769 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
+<title>Beta — Ascent Log</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#15140F">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Beta">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="icon" href="icon-192.png" type="image/png">
+<style>
+:root{
+  --bg:#15140F;
+  --surface:#201E18;
+  --surface-2:#2A2720;
+  --line:#3A362C;
+  --chalk:#EFE9DC;
+  --muted:#9A9181;
+  --rust:#C9622E;
+  --rust-dim:#7A3F22;
+  --moss:#7E9A66;
+  --moss-dim:#4D5F3F;
+  --amber:#D2A23A;
+  --radius:14px;
+  --font-display:-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-body:-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-mono:ui-monospace, 'SF Mono', 'Cascadia Code', 'Courier New', monospace;
+}
+
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{
+  background:var(--bg);
+  color:var(--chalk);
+  font-family:var(--font-body);
+  -webkit-font-smoothing:antialiased;
+  min-height:100vh;
+}
+
+#app{
+  max-width:480px;
+  margin:0 auto;
+  min-height:100vh;
+  display:flex;
+  flex-direction:column;
+  position:relative;
+  background:
+    radial-gradient(circle at 15% 0%, rgba(201,98,46,0.07), transparent 40%),
+    var(--bg);
+}
+
+header.top{
+  padding:22px 20px 14px;
+  border-bottom:1px solid var(--line);
+}
+.brand{display:flex;align-items:baseline;gap:8px;}
+.brand .mark{
+  font-family:var(--font-display);
+  font-weight:700;
+  font-size:26px;
+  letter-spacing:0.5px;
+}
+.brand .sub{
+  font-family:var(--font-mono);
+  font-size:11px;
+  color:var(--rust);
+  letter-spacing:1.5px;
+  text-transform:uppercase;
+}
+.tagline{margin-top:4px;font-size:12.5px;color:var(--muted);}
+.offline-pill{
+  display:inline-flex;
+  align-items:center;
+  gap:5px;
+  margin-top:8px;
+  font-size:11px;
+  font-family:var(--font-mono);
+  color:var(--moss);
+}
+.offline-pill .dot{width:6px;height:6px;border-radius:50%;background:var(--moss);}
+
+main{flex:1;padding:18px 20px 100px;overflow-y:auto;}
+.view{display:none;}
+.view.active{display:block;animation:fade .2s ease;}
+@keyframes fade{from{opacity:0;transform:translateY(4px);}to{opacity:1;transform:translateY(0);}}
+
+.field{margin-bottom:16px;}
+.field label{
+  display:block;
+  font-size:11px;
+  letter-spacing:1px;
+  text-transform:uppercase;
+  color:var(--muted);
+  margin-bottom:6px;
+  font-family:var(--font-mono);
+}
+.hint{font-size:11.5px;color:var(--amber);margin-top:5px;font-family:var(--font-mono);}
+input[type=text], input[type=date], select, textarea{
+  width:100%;
+  background:var(--surface);
+  border:1px solid var(--line);
+  color:var(--chalk);
+  padding:11px 12px;
+  border-radius:10px;
+  font-size:15px;
+  font-family:var(--font-body);
+  appearance:none;
+}
+textarea{resize:vertical;min-height:60px;}
+input:focus, select:focus, textarea:focus{outline:none;border-color:var(--rust);}
+
+.seg{display:flex;background:var(--surface);border:1px solid var(--line);border-radius:10px;overflow:hidden;}
+.seg button{
+  flex:1;padding:10px 0;background:transparent;border:none;color:var(--muted);
+  font-family:var(--font-body);font-weight:600;font-size:13.5px;cursor:pointer;
+}
+.seg button.active{background:var(--rust-dim);color:var(--chalk);}
+.seg button:not(:last-child){border-right:1px solid var(--line);}
+
+.row2{display:flex;gap:12px;}
+.row2 > .field{flex:1;}
+
+.submit-btn{
+  width:100%;padding:14px;background:var(--rust);color:#1A1208;border:none;
+  border-radius:10px;font-family:var(--font-display);font-weight:700;font-size:15px;
+  letter-spacing:0.3px;cursor:pointer;margin-top:6px;
+}
+.submit-btn:active{transform:scale(0.99);}
+
+.filters{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;}
+.chip{
+  padding:6px 13px;border-radius:999px;border:1px solid var(--line);background:var(--surface);
+  color:var(--muted);font-size:12.5px;font-weight:500;cursor:pointer;
+}
+.chip.active{background:var(--chalk);color:var(--bg);border-color:var(--chalk);}
+
+.day-group{margin-bottom:18px;}
+.day-label{
+  font-family:var(--font-mono);font-size:11px;color:var(--muted);letter-spacing:1px;
+  margin-bottom:8px;text-transform:uppercase;
+}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:13px 14px;margin-bottom:10px;}
+.card-top{display:flex;align-items:center;justify-content:space-between;gap:8px;}
+.grade-badge{
+  font-family:var(--font-mono);font-weight:700;font-size:14px;padding:3px 9px;border-radius:7px;
+  white-space:nowrap;color:#1A1208;
+}
+.grade-badge.boulder-outdoor{background:var(--surface-2);color:var(--amber);}
+.status-dot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:6px;}
+.status-sent .status-dot{background:var(--moss);}
+.status-flash .status-dot{background:var(--amber);}
+.status-attempt .status-dot{background:var(--muted);}
+.meta-line{font-size:12.5px;color:var(--muted);margin-top:6px;display:flex;align-items:center;flex-wrap:wrap;gap:6px;}
+.place{color:var(--chalk);font-weight:500;}
+.tag{
+  font-size:10.5px;font-family:var(--font-mono);color:var(--muted);border:1px solid var(--line);
+  border-radius:5px;padding:1px 6px;text-transform:uppercase;
+}
+.notes{margin-top:7px;font-size:13px;color:#C9C2B2;line-height:1.4;}
+.del-btn{background:none;border:none;color:var(--muted);font-size:18px;line-height:1;cursor:pointer;padding:2px 4px;}
+.empty{text-align:center;padding:60px 20px;color:var(--muted);}
+.empty .big{font-family:var(--font-display);font-size:17px;color:var(--chalk);margin-bottom:6px;}
+
+.stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:22px;}
+.stat-box{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:14px;}
+.stat-box .num{font-family:var(--font-display);font-weight:700;font-size:22px;color:var(--chalk);}
+.stat-box .num.rust{color:var(--rust);}
+.stat-box .num.amber{color:var(--amber);}
+.stat-box .label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;margin-top:3px;font-family:var(--font-mono);}
+
+.pyramid-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px;}
+.pyramid-head h3{font-family:var(--font-display);font-size:15px;margin:0;font-weight:600;}
+.pyr-row{display:flex;align-items:center;gap:8px;margin-bottom:6px;}
+.pyr-grade{font-family:var(--font-mono);font-size:11.5px;font-weight:700;color:var(--muted);width:50px;text-align:right;flex-shrink:0;text-transform:capitalize;}
+.pyr-bar-track{flex:1;}
+.pyr-bar{height:18px;border-radius:4px;display:flex;align-items:center;justify-content:flex-end;padding-right:6px;min-width:22px;transition:width .4s ease;}
+.pyr-bar span{font-family:var(--font-mono);font-size:11px;font-weight:700;color:#1A1208;}
+.pyr-empty{color:var(--muted);font-size:13px;text-align:center;padding:30px 0;}
+
+.breakdown-toggle{margin-bottom:16px;}
+
+.donut-wrap{display:flex;align-items:center;gap:20px;flex-wrap:wrap;padding:6px 0 4px;}
+.donut{width:138px;height:138px;border-radius:50%;position:relative;flex-shrink:0;}
+.donut-hole{position:absolute;inset:20px;border-radius:50%;background:var(--surface);display:flex;flex-direction:column;align-items:center;justify-content:center;}
+.donut-hole .num{font-family:var(--font-display);font-weight:700;font-size:22px;color:var(--chalk);}
+.donut-hole .label{font-size:9.5px;color:var(--muted);text-transform:uppercase;letter-spacing:0.6px;font-family:var(--font-mono);margin-top:2px;text-align:center;}
+.legend{flex:1;min-width:150px;display:flex;flex-direction:column;gap:8px;}
+.legend-row{display:flex;align-items:center;gap:8px;font-size:12.5px;}
+.legend-swatch{width:10px;height:10px;border-radius:3px;flex-shrink:0;}
+.legend-label{flex:1;color:var(--chalk);}
+.legend-count{color:var(--muted);font-family:var(--font-mono);font-size:11px;flex-shrink:0;}
+
+.prog-header{display:flex;align-items:center;gap:18px;margin-bottom:22px;flex-wrap:wrap;}
+.prog-ring{width:110px;height:110px;border-radius:50%;position:relative;flex-shrink:0;}
+.prog-ring .ring-hole{position:absolute;inset:14px;border-radius:50%;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;}
+.prog-ring .ring-hole .num{font-family:var(--font-display);font-weight:700;font-size:19px;color:var(--chalk);}
+.prog-ring .ring-hole .label{font-size:9px;color:var(--muted);font-family:var(--font-mono);text-transform:uppercase;letter-spacing:0.5px;}
+.prog-summary{flex:1;min-width:140px;}
+.prog-summary .pct{font-family:var(--font-display);font-size:26px;font-weight:700;color:var(--moss);}
+.prog-summary .sub{font-size:12px;color:var(--muted);margin-top:2px;}
+.prog-row{display:flex;align-items:center;gap:8px;margin-bottom:7px;}
+.prog-grade-label{font-family:var(--font-mono);font-size:11.5px;font-weight:700;color:var(--muted);width:42px;text-align:right;flex-shrink:0;}
+.prog-track{flex:1;height:14px;background:var(--surface-2);border-radius:7px;overflow:hidden;}
+.prog-fill{height:100%;background:linear-gradient(90deg, var(--moss-dim), var(--moss));}
+.prog-count{font-family:var(--font-mono);font-size:11px;color:var(--muted);width:46px;text-align:right;flex-shrink:0;}
+.no-db-note{
+  background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:13px 14px;
+  font-size:13px;color:var(--muted);line-height:1.45;margin-bottom:18px;
+}
+.completed-details{margin-top:18px;font-size:13px;color:var(--muted);}
+.completed-details summary{cursor:pointer;color:var(--chalk);font-weight:600;margin-bottom:8px;font-family:var(--font-body);}
+.completed-details ul{margin:0;padding-left:18px;line-height:1.7;}
+.completed-details li{margin-bottom:2px;}
+
+.proj-toolbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;gap:10px;}
+.new-proj-btn{
+  background:var(--rust);color:#1A1208;border:none;border-radius:10px;padding:9px 14px;
+  font-family:var(--font-display);font-weight:700;font-size:13px;cursor:pointer;white-space:nowrap;
+}
+.proj-card{
+  background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);
+  padding:14px;margin-bottom:10px;cursor:pointer;
+}
+.proj-card:active{transform:scale(0.99);}
+.proj-card-top{display:flex;align-items:center;justify-content:space-between;gap:8px;}
+.proj-name{font-family:var(--font-display);font-weight:700;font-size:15px;color:var(--chalk);}
+.status-badge{
+  font-family:var(--font-mono);font-size:10px;text-transform:uppercase;letter-spacing:0.6px;
+  padding:3px 8px;border-radius:6px;flex-shrink:0;
+}
+.status-badge.active{background:var(--rust-dim);color:var(--chalk);}
+.status-badge.sent{background:var(--moss-dim);color:var(--chalk);}
+.status-badge.parked{background:var(--surface-2);color:var(--muted);}
+.proj-meta{font-size:12px;color:var(--muted);margin-top:6px;display:flex;flex-wrap:wrap;gap:6px;align-items:center;}
+.proj-stats-line{font-size:11.5px;color:var(--muted);margin-top:8px;font-family:var(--font-mono);display:flex;gap:14px;}
+
+.proj-detail-header{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:4px;}
+.back-link{background:none;border:none;color:var(--muted);font-size:13px;font-family:var(--font-body);cursor:pointer;padding:0 0 14px;display:flex;align-items:center;gap:5px;}
+.back-link svg{width:15px;height:15px;}
+
+.detail-stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:16px 0 22px;}
+.detail-stat-grid .stat-box .num{font-size:18px;}
+
+.session-form{
+  background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);
+  padding:14px;margin-bottom:20px;
+}
+.session-form h4{font-family:var(--font-display);font-size:14px;margin:0 0 12px;font-weight:600;}
+.checkbox-row{display:flex;align-items:center;gap:9px;margin:10px 0 14px;}
+.checkbox-row input{width:18px;height:18px;accent-color:var(--moss);}
+.checkbox-row label{font-size:13.5px;color:var(--chalk);margin:0;text-transform:none;letter-spacing:0;font-family:var(--font-body);}
+
+.timeline{margin-top:4px;}
+.timeline h3{font-family:var(--font-display);font-size:15px;margin:0 0 12px;font-weight:600;}
+.session-row{
+  border-left:2px solid var(--line);padding:2px 0 14px 16px;position:relative;margin-bottom:2px;
+}
+.session-row::before{
+  content:'';position:absolute;left:-5px;top:5px;width:8px;height:8px;border-radius:50%;background:var(--rust);
+}
+.session-row.sent-mark::before{background:var(--moss);}
+.session-row:last-child{padding-bottom:0;}
+.session-top{display:flex;justify-content:space-between;align-items:baseline;gap:8px;}
+.session-date{font-family:var(--font-mono);font-size:12px;color:var(--chalk);font-weight:600;}
+.session-attempts{font-family:var(--font-mono);font-size:11px;color:var(--muted);}
+.session-note{font-size:13px;color:#C9C2B2;line-height:1.45;margin-top:4px;}
+.session-sent-tag{font-size:10px;font-family:var(--font-mono);color:var(--moss);text-transform:uppercase;letter-spacing:0.5px;margin-top:3px;}
+.del-session{background:none;border:none;color:var(--muted);font-size:15px;cursor:pointer;padding:0 4px;}
+
+.proj-actions{display:flex;gap:10px;margin-top:22px;}
+.proj-actions .backup-btn{flex:1;}
+.danger-confirm{margin-top:10px;}
+
+.history-toolbar{margin-bottom:14px;}
+.history-toolbar input[type=text]{margin-bottom:10px;}
+.search-sort-row{display:flex;gap:10px;align-items:flex-start;}
+.search-sort-row .filters{flex:1;margin-bottom:0;}
+.search-sort-row select{width:auto;flex-shrink:0;min-width:112px;padding:9px 10px;font-size:13px;}
+
+.card-actions{display:flex;align-items:center;gap:2px;}
+.edit-btn{background:none;border:none;color:var(--muted);font-size:14px;cursor:pointer;padding:2px 6px;}
+.cond-tag{
+  font-size:10.5px;font-family:var(--font-mono);color:var(--amber);border:1px solid var(--line);
+  border-radius:5px;padding:1px 6px;display:inline-block;
+}
+
+.heat-wrap{overflow-x:auto;padding-bottom:4px;}
+.heat-grid{display:grid;grid-auto-flow:column;grid-template-rows:repeat(7, 1fr);gap:3px;width:max-content;}
+.heat-cell{width:11px;height:11px;border-radius:2px;background:var(--surface-2);}
+.heat-cell.l1{background:#5A3322;}
+.heat-cell.l2{background:#8A4A28;}
+.heat-cell.l3{background:var(--rust);}
+.heat-cell.l4{background:#E8895A;}
+.heat-legend{display:flex;align-items:center;gap:5px;margin-top:8px;font-size:10.5px;color:var(--muted);font-family:var(--font-mono);}
+.heat-legend .heat-cell{width:9px;height:9px;}
+.streak-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin:14px 0 24px;}
+.streak-grid .stat-box{padding:12px;}
+.streak-grid .stat-box .num{font-size:18px;}
+
+.browse-details{margin-top:18px;font-size:13px;color:var(--muted);}
+.browse-details summary{cursor:pointer;color:var(--chalk);font-weight:600;margin-bottom:10px;font-family:var(--font-body);}
+.browse-list{max-height:360px;overflow-y:auto;border:1px solid var(--line);border-radius:10px;}
+.browse-row{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:9px 12px;border-bottom:1px solid var(--line);}
+.browse-row:last-child{border-bottom:none;}
+.browse-row.done{opacity:0.5;}
+.browse-name{font-size:13px;color:var(--chalk);}
+.browse-grade{font-family:var(--font-mono);font-size:11px;color:var(--muted);margin-left:6px;}
+.browse-check{color:var(--moss);font-size:11px;font-family:var(--font-mono);white-space:nowrap;}
+.browse-start{
+  background:var(--surface-2);border:1px solid var(--line);color:var(--chalk);border-radius:7px;
+  padding:4px 9px;font-size:11px;font-family:var(--font-body);cursor:pointer;white-space:nowrap;
+}
+
+.backup-section{
+  margin-top:28px;
+  padding-top:18px;
+  border-top:1px solid var(--line);
+}
+.backup-section h3{font-family:var(--font-display);font-size:15px;margin:0 0 4px;font-weight:600;}
+.backup-section .sub-text{font-size:12px;color:var(--muted);margin-bottom:14px;line-height:1.4;}
+.backup-row{display:flex;gap:10px;margin-bottom:10px;}
+.backup-btn{
+  flex:1;padding:11px;border-radius:10px;border:1px solid var(--line);background:var(--surface);
+  color:var(--chalk);font-size:13.5px;font-weight:600;cursor:pointer;text-align:center;
+  font-family:var(--font-body);
+}
+.backup-btn:active{transform:scale(0.99);}
+.backup-btn.primary{background:var(--rust-dim);border-color:var(--rust-dim);}
+input[type=file]{display:none;}
+.import-confirm{
+  background:var(--surface-2);border:1px solid var(--line);border-radius:var(--radius);
+  padding:14px;margin-top:6px;
+}
+.import-confirm p{font-size:13.5px;margin:0 0 12px;line-height:1.4;}
+.import-confirm .backup-row{margin-bottom:0;}
+.import-confirm .backup-btn.danger{background:var(--rust-dim);}
+.import-confirm .backup-btn.ghost{background:transparent;}
+
+nav.bottom{
+  position:fixed;bottom:0;left:0;right:0;max-width:480px;margin:0 auto;
+  background:rgba(21,20,15,0.94);border-top:1px solid var(--line);display:flex;
+  padding:8px 10px calc(8px + env(safe-area-inset-bottom));
+}
+nav.bottom button{
+  flex:1;background:none;border:none;color:var(--muted);display:flex;flex-direction:column;
+  align-items:center;gap:3px;padding:6px 0;font-size:11px;font-weight:600;cursor:pointer;
+}
+nav.bottom button.active{color:var(--rust);}
+nav.bottom svg{width:20px;height:20px;}
+
+.toast{
+  position:fixed;bottom:78px;left:50%;transform:translateX(-50%);background:var(--chalk);color:var(--bg);
+  padding:9px 16px;border-radius:999px;font-size:13px;font-weight:600;opacity:0;pointer-events:none;
+  transition:opacity .25s ease;white-space:nowrap;max-width:90%;text-align:center;
+}
+.toast.show{opacity:1;}
+
+@media (prefers-reduced-motion: reduce){ .view.active{animation:none;} }
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<script>
+/* ---------- Grading systems ---------- */
+const VGRADES = ['VB','V0','V1','V2','V3','V4','V5','V6','V7','V8','V9','V10','V11','V12','V13','V14','V15','V16','V17'];
+const GYM_COLORS = [
+  { key:'orange', label:'Orange', range:'V0',    hex:'#D2742A' },
+  { key:'red',    label:'Red',    range:'V1/2',  hex:'#C0392B' },
+  { key:'blue',   label:'Blue',   range:'V3/4',  hex:'#3C6E9C' },
+  { key:'green',  label:'Green',  range:'V5/6',  hex:'#5C8A4A' },
+  { key:'purple', label:'Purple', range:'V7/8',  hex:'#7B5BA6' },
+  { key:'black',  label:'Black',  range:'V9/10', hex:'#2B2926' },
+  { key:'pink',   label:'Pink',   range:'V11+',  hex:'#C45B8C' }
+];
+const CLIMB_TYPES = ['Slab','Vertical','Overhang','Roof','Arete','Crimpy','Compression','Technical / Balancy','Powerful / Dynamic','Mantle','Crack'];
+const CLIMB_TYPE_COLORS = {
+  'Slab':'#8B7355', 'Vertical':'#6E8B74', 'Overhang':'#C9622E', 'Roof':'#A6492C',
+  'Arete':'#D2A23A', 'Crimpy':'#7B5BA6', 'Compression':'#3C6E9C', 'Technical / Balancy':'#5C8A4A',
+  'Powerful / Dynamic':'#C45B8C', 'Mantle':'#B08968', 'Crack':'#CBB994'
+};
+const CRAGS = ['Calabogie', 'Val-David'];
+const FRICTION_OPTIONS = ['Great','Good','Average','Poor','Greasy'];
+const HUMIDITY_OPTIONS = ['Dry','Average','Humid','Very humid'];
+
+/* Otter Pond Boulders — Calabogie (2022 guidebook) */
+const CALABOGIE_PROBLEMS = [
+  ['Gatekeeper','V2'],['Rampart','V2'],['Just Funky','V10'],['Solids in Suspension','V2'],
+  ['Deception','V1'],['November','V4'],['The High Road','V5'],['Trench Warfare','V5'],
+  ['The Low Road','V8'],['Ice Age','V3'],['The Boulder I Want','V4'],['Trianglism','V2'],
+  ['Disappearing Ink','V4'],['Solar Flare','V3'],['Sunspot','V2'],
+  ['Gateway Arete','V1'],['Gateway Traverse','V2'],['The Gate','V2'],['Put All Your Fears to Rest','V2-V4'],
+  ['Manteling 201','V1'],['Manteling 101','V0'],['Mind the Mossy Knoll','V2'],['Bottoms Up','V0'],
+  ['Hispanic Panic','V1'],['Backscratcher','V0'],['Mean Looking Porcupine','V0'],['Walking Stick','V2'],
+  ['Stink Bug','V3'],['Ants on a Log','V0-'],
+  ['Astraphobia','V5'],['Cacophobia Direct','V3'],['Entomophobia','V0'],['Staalbasiphobia','V4'],
+  ['Ergophobia','V4'],['Fear of Porcupines','V4'],['Enochlophobia','V3'],['The Journey','V6'],
+  ["The Bullfighter's Friend",'V3'],['The Ambassador of KickYerAssiter','V3'],['The Conquistador of Rad','V3'],
+  ['Blackfly Bitch','V3'],['Twisted by Design','V5'],['Gatineau Special','V5'],['The Theorem','V7'],
+  ['Palpable Tension','V5'],['Vale of Shadows','V12'],['Demogorgon','V7'],
+  ['The Survivalist','V4'],['Waiting in Line for the Electric Chair','V3'],['Last Meal','V5'],
+  ['Solid Ether','V3'],['SF Bunnies','V3'],['Watership Down','V2'],['Prisoner of Gravity','V5'],
+  ['Escape Tunnel','V3'],['November Sunshine','V0-'],['The Rock Giveth','V5'],['Trundle of Joy','V1'],
+  ['Marita Special #1','V0'],['Black and Blue','V0'],['The Pinnacle Gnome','V0-'],
+  ['Beautiful Odyssey','V3'],['The Upside Down','V6'],['Some Beautiful Things Remain','V1'],
+  ['The Tempest','V2'],['Castaway','V1'],['Moby Dick','V1'],['The Belly of the Whale','V0'],
+  ['Jonah','V3'],['Lost at Sea','V3'],['Rescue','V1'],['Cruxifiction 2.0','V3'],['Passover 2.0','V2'],
+  ['Westward Ho','V0'],['Hot Crossed Buns','V1'],['Yellow Fever','V4'],['West Nile Direct','V4'],
+  ['Trypanosomiasis','V4'],['West Nile','V?'],['Malaria','V4'],['Dengue','V6'],
+  ['Siege Tactics','V5'],['Uphill Battle','V5'],['White Flag','V0-'],['Call of Duty','V0-'],
+  ['War of Attrition','V0-'],['The Rubicon','V1'],['Skirmish','V1'],['Skirmish Traverse','V4'],
+  ['Pulp Friction','V5'],['Lockdown','V0'],['Crescent Moon','V3'],['Crotch Rocket','V6'],
+  ['Crotch Notch','V2'],['Westside Story','V8'],['Intro to Westside Story','V11'],['The East Enders','V5'],
+  ['Not a Jedi Yet','V0-'],['Flight of Fancy','V1'],['Ivory Tusk','V2'],['The Ultimate Chad','V13'],
+  ['Scratching Post Direct','V3'],["They Can't All Be Gold",'V0'],['The Perch','V4'],['Crooked Nose','V0-'],
+  ['Horde Juggernaut in the Fog','V1'],['Concentration Tongue','V7'],['Snowbird','V2'],
+  ["Wolf in Sheep's Clothing",'V6'],['Little Red Riding Hood','V4'],
+  ['The Happy Hooker','V3'],['Meanie','V3'],['Suspended Animation','V4'],['Confident Cat','V6'],
+  ['Consolation Prize','V0-'],['Broken Dreams','V2'],['Babylon','V0'],['Bachelor of Applied Manteling','V0'],
+  ['Reflection','V2'],['Hindsight','V4'],
+  ['Onederland','V0'],['Resurrection','V5'],['Tsunami','V4'],['Riptide','V2'],['Ride the Wave','V3'],
+  ["Colin's Prow",'V2'],['La Soufrière','V11'],['Carnage','V14'],['Flight of the Majestic Porcupine','V5'],
+  ['Monkey Face','V2'],['Morpheus','V5'],['A Fire Upon the Deep','V5'],['Dreamweaver','V3'],
+  ['Greenland','V0'],['Mid-Atlantic Rift','V0'],['Trade Route to India','V4-V8'],['Sahara','V4ish'],
+  ['Sword in the Stone','V6'],['The Crusade','V7'],['From Capetown to Cairo','V1'],['Arabian Nights','V1'],
+  ['Kilimanjaro','V1'],['Hercules','V2'],['Ursa Major','V0'],['Zeus','V7'],['Stone Throne','V0'],
+  ['Yertle','V0'],['Down the Rabbit Hole','V1'],['Tales of the Purple Platypus','V5'],['Cheshire Cat','V1'],
+  ['Tigerlily','V5'],['Foxtail Lily','V9'],['Waterlily','V3'],['The Orbital Traverse','V3'],
+  ['Orbital Insertion','V4'],['Perigee','V5'],['Apogee','V5'],['Ox Tail Swoop','V1'],['Delicate Touch','V1'],
+  ['Big Blue Ox','V0-'],['Mary Poppins','V1'],['Mary Poppins Left','V3'],['Bogie Left','V3'],
+  ['Bogie Right','V3'],['Good Eye, Petra','V0-'],
+  ["Greg's Bread",'V3'],['White Buffalo','V0'],['Bloody Kristal','V1'],['Bloody Kristal Direct','V2'],
+  ['Pain for Breakfast','V4'],['Wild Turkey','V0'],['Tombstone','V0'],["Fool's Gold",'V4'],['Pyrite','V2'],
+  ['Birchbark Brigade','V0'],['Wilderness','V0-'],['Boundary','V0'],['Southward Expansion','V1/2'],
+  ['Uncivilized','V2']
+].sort((a,b) => a[0].localeCompare(b[0]));
+
+const CALABOGIE_MAP = Object.fromEntries(CALABOGIE_PROBLEMS.map(p => [p[0], p[1]]));
+
+/* ---------- State ---------- */
+let ascents = [];
+const STORAGE_KEY = 'crux-ascents-v1';
+let storageOk = true;
+let activeView = 'log';
+let venueChoice = 'gym';
+let cragChoice = 'Calabogie';
+let historyFilter = 'all';
+let pyramidMode = 'outdoor';
+let importPending = null;
+let importFileName = '';
+let breakdownMode = 'grade';
+let progressCrag = 'Calabogie';
+let projects = [];
+const PROJECTS_KEY = 'crux-projects-v1';
+let projectsFilter = 'active';
+let openProjectId = null;
+let showNewProjectForm = false;
+let projVenueChoice = 'gym';
+let projCragChoice = 'Calabogie';
+let deleteProjectConfirmId = null;
+let editingAscentId = null;
+let editingProjectFormOpen = false;
+let projectPrefill = null;
+let historySearch = '';
+let historySort = 'newest';
+
+function gymColorIndex(key){ return GYM_COLORS.findIndex(c => c.key === key); }
+function gymColorInfo(key){ return GYM_COLORS.find(c => c.key === key); }
+function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
+function todayISO(){
+  const d = new Date();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${d.getFullYear()}-${m}-${day}`;
+}
+function addDaysISO(iso, delta){
+  const [y, m, d] = iso.split('-').map(Number);
+  const dt = new Date(y, m - 1, d);
+  dt.setDate(dt.getDate() + delta);
+  const mm = String(dt.getMonth() + 1).padStart(2, '0');
+  const dd = String(dt.getDate()).padStart(2, '0');
+  return `${dt.getFullYear()}-${mm}-${dd}`;
+}
+function dateDiffDays(isoA, isoB){
+  const [ya, ma, da] = isoA.split('-').map(Number);
+  const [yb, mb, db] = isoB.split('-').map(Number);
+  const a = new Date(ya, ma - 1, da), b = new Date(yb, mb - 1, db);
+  return Math.round((a - b) / 86400000);
+}
+function entryRank(a){ return a.venue === 'gym' ? gymColorIndex(a.gymColor) : VGRADES.indexOf(a.grade); }
+function fmtDate(iso){
+  const d = new Date(iso + 'T00:00:00');
+  return d.toLocaleDateString(undefined, { weekday:'short', month:'short', day:'numeric', year:'numeric' });
+}
+function escapeHtml(s){ const d = document.createElement('div'); d.textContent = s || ''; return d.innerHTML; }
+
+function loadAscents(){
+  try{
+    const raw = localStorage.getItem(STORAGE_KEY);
+    ascents = raw ? JSON.parse(raw) : [];
+    storageOk = true;
+  }catch(e){
+    ascents = [];
+    storageOk = false;
+  }
+}
+function saveAscents(){
+  try{
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(ascents));
+    storageOk = true;
+  }catch(e){
+    storageOk = false;
+  }
+}
+
+function loadProjects(){
+  try{
+    const raw = localStorage.getItem(PROJECTS_KEY);
+    projects = raw ? JSON.parse(raw) : [];
+  }catch(e){
+    projects = [];
+  }
+}
+function saveProjects(){
+  try{
+    localStorage.setItem(PROJECTS_KEY, JSON.stringify(projects));
+  }catch(e){
+    storageOk = false;
+  }
+}
+
+/* ---------- Activity / streaks ---------- */
+function getActivityCounts(){
+  const counts = {};
+  ascents.forEach(a => { counts[a.date] = (counts[a.date] || 0) + 1; });
+  projects.forEach(p => (p.sessions || []).forEach(s => { counts[s.date] = (counts[s.date] || 0) + 1; }));
+  return counts;
+}
+function computeStreaks(dateSet){
+  if(dateSet.size === 0) return { current: 0, longest: 0, activeDays: 0 };
+  const sorted = Array.from(dateSet).sort();
+  let longest = 1, run = 1;
+  for(let i = 1; i < sorted.length; i++){
+    const diff = dateDiffDays(sorted[i], sorted[i-1]);
+    if(diff === 1) run++; else if(diff > 1) run = 1;
+    if(run > longest) longest = run;
+  }
+  let current = 0;
+  let cursor = todayISO();
+  if(!dateSet.has(cursor)) cursor = addDaysISO(cursor, -1);
+  while(dateSet.has(cursor)){
+    current++;
+    cursor = addDaysISO(cursor, -1);
+  }
+  return { current, longest, activeDays: dateSet.size };
+}
+function renderHeatmap(counts){
+  const todayIso = todayISO();
+  const [ty, tm, td] = todayIso.split('-').map(Number);
+  const todayDow = new Date(ty, tm - 1, td).getDay();
+  const weeks = 18;
+  const totalDays = weeks * 7;
+  const daysAfterToday = 6 - todayDow;
+  const endDate = addDaysISO(todayIso, daysAfterToday);
+  const startDate = addDaysISO(endDate, -(totalDays - 1));
+  let cells = '';
+  for(let i = 0; i < totalDays; i++){
+    const d = addDaysISO(startDate, i);
+    const c = counts[d] || 0;
+    const future = dateDiffDays(d, todayIso) > 0;
+    let lvl = '';
+    if(c >= 4) lvl = 'l4'; else if(c === 3) lvl = 'l3'; else if(c === 2) lvl = 'l2'; else if(c === 1) lvl = 'l1';
+    cells += `<div class="heat-cell ${lvl}" ${future ? 'style="visibility:hidden;"' : ''} title="${d}: ${c} session${c===1?'':'s'}"></div>`;
+  }
+  return `<div class="heat-wrap"><div class="heat-grid">${cells}</div></div>`;
+}
+function renderActivitySection(){
+  const counts = getActivityCounts();
+  const dateSet = new Set(Object.keys(counts));
+  const { current, longest, activeDays } = computeStreaks(dateSet);
+  return `
+    <div class="pyramid-head"><h3>Activity</h3></div>
+    <div class="streak-grid">
+      <div class="stat-box"><div class="num rust">${current}</div><div class="label">Current streak</div></div>
+      <div class="stat-box"><div class="num amber">${longest}</div><div class="label">Longest streak</div></div>
+      <div class="stat-box"><div class="num">${activeDays}</div><div class="label">Active days</div></div>
+    </div>
+    ${renderHeatmap(counts)}
+    <div class="heat-legend">Less<div class="heat-cell"></div><div class="heat-cell l1"></div><div class="heat-cell l2"></div><div class="heat-cell l3"></div><div class="heat-cell l4"></div>More</div>
+  `;
+}
+
+/* ---------- Render ---------- */
+function render(){
+  document.getElementById('app').innerHTML = `
+    <header class="top">
+      <div class="brand"><span class="mark">BETA</span><span class="sub">ascent log</span></div>
+      <div class="tagline">Every send, gym to crag.</div>
+      <div class="offline-pill"><span class="dot"></span>${storageOk ? 'Saved on this device — works offline' : 'Storage unavailable on this device'}</div>
+    </header>
+    <main>
+      ${renderLog()}
+      ${renderHistory()}
+      ${renderProjects()}
+      ${renderStats()}
+      ${renderCragProgress()}
+    </main>
+    <div class="toast" id="toast"></div>
+    <nav class="bottom">
+      ${navBtn('log','Log', iconPlus())}
+      ${navBtn('history','History', iconList())}
+      ${navBtn('projects','Projects', iconTarget())}
+      ${navBtn('stats','Stats', iconPyramid())}
+      ${navBtn('crag','Crag', iconFlag())}
+    </nav>
+  `;
+  attachHandlers();
+}
+
+function navBtn(key,label,icon){
+  return `<button data-nav="${key}" class="${activeView===key?'active':''}">${icon}<span>${label}</span></button>`;
+}
+function iconPlus(){ return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>`; }
+function iconList(){ return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="20" y2="6"/><line x1="8" y1="12" x2="20" y2="12"/><line x1="8" y1="18" x2="20" y2="18"/><circle cx="4" cy="6" r="1.3" fill="currentColor"/><circle cx="4" cy="12" r="1.3" fill="currentColor"/><circle cx="4" cy="18" r="1.3" fill="currentColor"/></svg>`; }
+function iconPyramid(){ return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3 L21 19 H3 Z"/></svg>`; }
+function iconFlag(){ return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 21V4"/><path d="M5 4h13l-3 4.5L18 13H5"/></svg>`; }
+function iconTarget(){ return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="0.8" fill="currentColor"/></svg>`; }
+function iconBack(){ return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>`; }
+function iconEdit(){ return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>`; }
+
+function renderLog(){
+  const editingAscent = editingAscentId ? ascents.find(a => a.id === editingAscentId) : null;
+
+  const typeOptions = CLIMB_TYPES.map(t => `<option value="${t}" ${editingAscent && editingAscent.climbType===t ? 'selected':''}>${t}</option>`).join('');
+  const gymColorOptions = GYM_COLORS.map(c => `<option value="${c.key}" ${editingAscent && editingAscent.gymColor===c.key ? 'selected':''}>${c.label} (${c.range})</option>`).join('');
+  const vOptions = VGRADES.map(g => `<option value="${g}" ${editingAscent && editingAscent.grade===g ? 'selected':''}>${g}</option>`).join('');
+  const cragOptions = CRAGS.map(c => `<option value="${c}" ${c===cragChoice?'selected':''}>${c}</option>`).join('');
+  const statusOptions = [['sent','Sent'],['flash','Flash'],['attempt','Attempt']]
+    .map(([v,l]) => `<option value="${v}" ${editingAscent && editingAscent.status===v ? 'selected':''}>${l}</option>`).join('');
+  const frictionOptions = `<option value="">Friction</option>` + FRICTION_OPTIONS.map(f => `<option value="${f}" ${editingAscent && editingAscent.friction===f ? 'selected':''}>${f}</option>`).join('');
+  const humidityOptions = `<option value="">Humidity</option>` + HUMIDITY_OPTIONS.map(h => `<option value="${h}" ${editingAscent && editingAscent.humidity===h ? 'selected':''}>${h}</option>`).join('');
+
+  const venueFields = venueChoice === 'gym' ? `
+      <div class="field">
+        <label>Gym name</label>
+        <input type="text" id="f-gymname" placeholder="e.g. Movement RiNo" value="${editingAscent ? escapeHtml(editingAscent.gymName||'') : ''}">
+      </div>
+      <div class="field">
+        <label>Gym grade</label>
+        <select id="f-gymcolor">${gymColorOptions}</select>
+      </div>
+  ` : `
+      <div class="field">
+        <label>Crag</label>
+        <select id="f-crag">${cragOptions}</select>
+      </div>
+      <div class="field">
+        <label>Problem name</label>
+        <input type="text" id="f-problem" placeholder="${cragChoice === 'Calabogie' ? 'Start typing…' : 'e.g. Le Bloc'}"
+          value="${editingAscent ? escapeHtml(editingAscent.problemName||'') : ''}"
+          ${cragChoice === 'Calabogie' ? 'list="calabogie-list"' : ''}>
+        ${cragChoice === 'Calabogie' ? `<datalist id="calabogie-list">${CALABOGIE_PROBLEMS.map(p => `<option value="${escapeHtml(p[0])}">`).join('')}</datalist>` : ''}
+        <div class="hint" id="problem-hint"></div>
+      </div>
+      <div class="field">
+        <label>V grade</label>
+        <select id="f-vgrade">${vOptions}</select>
+      </div>
+      <div class="field">
+        <label>Conditions (optional)</label>
+        <div class="row2">
+          <select id="f-friction">${frictionOptions}</select>
+          <select id="f-humidity">${humidityOptions}</select>
+        </div>
+        <input type="text" id="f-temp" placeholder="Temp, e.g. 14°C" style="margin-top:8px;" value="${editingAscent ? escapeHtml(editingAscent.temp||'') : ''}">
+      </div>
+  `;
+
+  return `
+  <div class="view ${activeView==='log'?'active':''}" id="view-log">
+    ${editingAscent ? `<div class="hint" style="margin-bottom:14px;">Editing an ascent from ${fmtDate(editingAscent.date)}</div>` : ''}
+    <form id="ascent-form">
+      <div class="field">
+        <label>Venue</label>
+        <div class="seg">
+          <button type="button" data-venue="gym" class="${venueChoice==='gym'?'active':''}">Gym</button>
+          <button type="button" data-venue="outdoor" class="${venueChoice==='outdoor'?'active':''}">Outdoor</button>
+        </div>
+      </div>
+      ${venueFields}
+      <div class="field">
+        <label>Climb type</label>
+        <select id="f-climbtype">${typeOptions}</select>
+      </div>
+      <div class="field">
+        <label>Status</label>
+        <select id="f-status">${statusOptions}</select>
+      </div>
+      <div class="field">
+        <label>Date</label>
+        <input type="date" id="f-date" value="${editingAscent ? editingAscent.date : todayISO()}">
+      </div>
+      <div class="field">
+        <label>Notes</label>
+        <textarea id="f-notes" placeholder="Beta, conditions, how it felt…">${editingAscent ? escapeHtml(editingAscent.notes||'') : ''}</textarea>
+      </div>
+      ${editingAscent ? `
+        <div class="backup-row">
+          <button type="submit" class="backup-btn primary">Save changes</button>
+          <button type="button" class="backup-btn" id="cancel-edit-ascent">Cancel</button>
+        </div>
+      ` : `<button type="submit" class="submit-btn">Log ascent</button>`}
+    </form>
+  </div>`;
+}
+
+function renderHistory(){
+  let list = ascents.slice();
+  if(historyFilter !== 'all'){ list = list.filter(a => a.venue === historyFilter); }
+  if(historySearch.trim()){
+    const q = historySearch.trim().toLowerCase();
+    list = list.filter(a => {
+      const hay = [a.problemName, a.gymName, a.crag, a.notes, a.climbType, a.grade].filter(Boolean).join(' ').toLowerCase();
+      return hay.includes(q);
+    });
+  }
+
+  const dateSortable = historySort === 'newest' || historySort === 'oldest';
+  if(historySort === 'newest') list.sort((a,b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0));
+  else if(historySort === 'oldest') list.sort((a,b) => (a.date > b.date ? 1 : a.date < b.date ? -1 : 0));
+  else if(historySort === 'hardest') list.sort((a,b) => entryRank(b) - entryRank(a));
+  else if(historySort === 'easiest') list.sort((a,b) => entryRank(a) - entryRank(b));
+
+  let body;
+  if(list.length === 0){
+    body = `<div class="empty"><div class="big">No ascents found</div>${ascents.length === 0 ? 'Hit "Log" to add your first send.' : 'Try a different search or filter.'}</div>`;
+  }else if(dateSortable){
+    const groups = {};
+    list.forEach(a => { (groups[a.date] = groups[a.date] || []).push(a); });
+    body = Object.keys(groups).map(date => `
+      <div class="day-group">
+        <div class="day-label">${fmtDate(date)}</div>
+        ${groups[date].map(a => cardHtml(a, false)).join('')}
+      </div>
+    `).join('');
+  }else{
+    body = list.map(a => cardHtml(a, true)).join('');
+  }
+
+  return `
+  <div class="view ${activeView==='history'?'active':''}" id="view-history">
+    <div class="history-toolbar">
+      <input type="text" id="history-search" placeholder="Search by name, crag, gym, notes…" value="${escapeHtml(historySearch)}">
+      <div class="search-sort-row">
+        <div class="filters">
+          <div class="chip ${historyFilter==='all'?'active':''}" data-filter="all">All</div>
+          <div class="chip ${historyFilter==='gym'?'active':''}" data-filter="gym">Gym</div>
+          <div class="chip ${historyFilter==='outdoor'?'active':''}" data-filter="outdoor">Outdoor</div>
+        </div>
+        <select id="history-sort">
+          <option value="newest" ${historySort==='newest'?'selected':''}>Newest</option>
+          <option value="oldest" ${historySort==='oldest'?'selected':''}>Oldest</option>
+          <option value="hardest" ${historySort==='hardest'?'selected':''}>Hardest</option>
+          <option value="easiest" ${historySort==='easiest'?'selected':''}>Easiest</option>
+        </select>
+      </div>
+    </div>
+    ${body}
+  </div>`;
+}
+
+function cardHtml(a, showDate){
+  const statusLabel = a.status === 'sent' ? 'Sent' : a.status === 'flash' ? 'Flash' : 'Attempt';
+  let gradeBadge, placeLine;
+  if(a.venue === 'gym'){
+    const c = gymColorInfo(a.gymColor) || GYM_COLORS[0];
+    gradeBadge = `<div class="grade-badge" style="background:${c.hex};">${c.label}</div>`;
+    placeLine = `<span class="place">${escapeHtml(a.gymName || 'Gym')}</span>`;
+  }else{
+    gradeBadge = `<div class="grade-badge boulder-outdoor">${escapeHtml(a.grade || '?')}</div>`;
+    placeLine = `<span class="place">${escapeHtml(a.crag || 'Outdoor')}</span>${a.problemName ? ` · ${escapeHtml(a.problemName)}` : ''}`;
+  }
+  const condBits = [a.friction, a.humidity, a.temp].filter(Boolean).join(' · ');
+  return `
+    <div class="card">
+      <div class="card-top">
+        ${gradeBadge}
+        <div class="card-actions">
+          <button class="edit-btn" data-edit-ascent="${a.id}" aria-label="Edit">${iconEdit()}</button>
+          <button class="del-btn" data-del="${a.id}" aria-label="Delete">×</button>
+        </div>
+      </div>
+      <div class="meta-line status-${a.status}">
+        <span class="status-dot"></span>${statusLabel}
+        <span>·</span>${placeLine}
+        ${showDate ? `<span>·</span><span>${fmtDate(a.date)}</span>` : ''}
+        <span>·</span><span>${a.venue === 'gym' ? 'Gym' : 'Outdoor'}</span>
+        ${a.climbType ? `<span class="tag">${escapeHtml(a.climbType)}</span>` : ''}
+      </div>
+      ${condBits ? `<div class="meta-line"><span class="cond-tag">${escapeHtml(condBits)}</span></div>` : ''}
+      ${a.notes ? `<div class="notes">${escapeHtml(a.notes)}</div>` : ''}
+    </div>
+  `;
+}
+
+function renderStats(){
+  const sentAll = ascents.filter(a => a.status === 'sent' || a.status === 'flash');
+  const total = ascents.length;
+  const totalSent = sentAll.length;
+  const month = todayISO().slice(0,7);
+  const thisMonth = ascents.filter(a => a.date.slice(0,7) === month).length;
+
+  const outdoorSent = sentAll.filter(a => a.venue === 'outdoor');
+  let hardestOutdoor = '—';
+  if(outdoorSent.length){
+    hardestOutdoor = outdoorSent.reduce((best,a) => VGRADES.indexOf(a.grade) > VGRADES.indexOf(best) ? a.grade : best, outdoorSent[0].grade);
+  }
+  const gymSent = sentAll.filter(a => a.venue === 'gym');
+  let hardestGymKey = null;
+  gymSent.forEach(a => { if(hardestGymKey === null || gymColorIndex(a.gymColor) > gymColorIndex(hardestGymKey)) hardestGymKey = a.gymColor; });
+  const hardestGymLabel = hardestGymKey ? gymColorInfo(hardestGymKey).label : '—';
+
+  let breakdownBody;
+  if(breakdownMode === 'grade'){
+    let pyramidBody;
+    if(pyramidMode === 'outdoor'){
+      const counts = {};
+      outdoorSent.forEach(a => { counts[a.grade] = (counts[a.grade] || 0) + 1; });
+      const used = VGRADES.filter(g => counts[g]);
+      const maxCount = Math.max(1, ...used.map(g => counts[g]));
+      pyramidBody = used.length === 0 ? `<div class="pyr-empty">No outdoor sends logged yet.</div>` :
+        used.slice().reverse().map(g => {
+          const pct = Math.max(10, Math.round((counts[g] / maxCount) * 100));
+          return `<div class="pyr-row"><div class="pyr-grade">${g}</div><div class="pyr-bar-track"><div class="pyr-bar" style="width:${pct}%;background:linear-gradient(90deg, var(--rust-dim), var(--rust));"><span>${counts[g]}</span></div></div></div>`;
+        }).join('');
+    }else{
+      const counts = {};
+      gymSent.forEach(a => { counts[a.gymColor] = (counts[a.gymColor] || 0) + 1; });
+      const used = GYM_COLORS.filter(c => counts[c.key]);
+      const maxCount = Math.max(1, ...used.map(c => counts[c.key]));
+      pyramidBody = used.length === 0 ? `<div class="pyr-empty">No gym sends logged yet.</div>` :
+        used.slice().reverse().map(c => {
+          const pct = Math.max(10, Math.round((counts[c.key] / maxCount) * 100));
+          return `<div class="pyr-row"><div class="pyr-grade">${c.label}</div><div class="pyr-bar-track"><div class="pyr-bar" style="width:${pct}%;background:${c.hex};"><span>${counts[c.key]}</span></div></div></div>`;
+        }).join('');
+    }
+    breakdownBody = `
+      <div class="pyramid-head">
+        <h3>Grade pyramid</h3>
+        <div class="seg" style="width:160px;">
+          <button type="button" data-pyr="outdoor" class="${pyramidMode==='outdoor'?'active':''}">Outdoor</button>
+          <button type="button" data-pyr="gym" class="${pyramidMode==='gym'?'active':''}">Gym</button>
+        </div>
+      </div>
+      ${pyramidBody}
+    `;
+  }else{
+    const counts = {};
+    sentAll.forEach(a => { if(a.climbType){ counts[a.climbType] = (counts[a.climbType] || 0) + 1; } });
+    const used = CLIMB_TYPES.filter(t => counts[t]);
+    const sentWithType = used.reduce((s,t) => s + counts[t], 0);
+    if(used.length === 0){
+      breakdownBody = `<div class="pyramid-head"><h3>Climbing style</h3></div><div class="pyr-empty">No sends with a climb type logged yet.</div>`;
+    }else{
+      let cumulative = 0;
+      const gradientParts = used.map(t => {
+        const startDeg = (cumulative / sentWithType) * 360;
+        cumulative += counts[t];
+        const endDeg = (cumulative / sentWithType) * 360;
+        return `${CLIMB_TYPE_COLORS[t] || '#9A9181'} ${startDeg}deg ${endDeg}deg`;
+      });
+      const donutBg = `conic-gradient(${gradientParts.join(', ')})`;
+      const legendRows = used.slice().sort((a,b) => counts[b] - counts[a]).map(t => `
+        <div class="legend-row">
+          <span class="legend-swatch" style="background:${CLIMB_TYPE_COLORS[t] || '#9A9181'};"></span>
+          <span class="legend-label">${escapeHtml(t)}</span>
+          <span class="legend-count">${counts[t]}</span>
+        </div>
+      `).join('');
+      breakdownBody = `
+        <div class="pyramid-head"><h3>Climbing style</h3></div>
+        <div class="donut-wrap">
+          <div class="donut" style="background:${donutBg};">
+            <div class="donut-hole"><div class="num">${sentWithType}</div><div class="label">sends</div></div>
+          </div>
+          <div class="legend">${legendRows}</div>
+        </div>
+      `;
+    }
+  }
+
+  return `
+  <div class="view ${activeView==='stats'?'active':''}" id="view-stats">
+    <div class="stat-grid">
+      <div class="stat-box"><div class="num">${total}</div><div class="label">Total logged</div></div>
+      <div class="stat-box"><div class="num rust">${totalSent}</div><div class="label">Sent</div></div>
+      <div class="stat-box"><div class="num amber">${hardestOutdoor}</div><div class="label">Hardest outdoor</div></div>
+      <div class="stat-box"><div class="num amber">${hardestGymLabel}</div><div class="label">Hardest gym color</div></div>
+      <div class="stat-box" style="grid-column:1/-1;"><div class="num">${thisMonth}</div><div class="label">Logged this month</div></div>
+    </div>
+    ${renderActivitySection()}
+    <div class="breakdown-toggle seg">
+      <button type="button" data-breakdown="grade" class="${breakdownMode==='grade'?'active':''}">Grade pyramid</button>
+      <button type="button" data-breakdown="style" class="${breakdownMode==='style'?'active':''}">Climbing style</button>
+    </div>
+    ${breakdownBody}
+    <div class="backup-section">
+      <h3>Backup &amp; restore</h3>
+      <div class="sub-text">Export saves a file you can keep somewhere safe or move to a new phone. Import loads ascents from a backup file — it won't duplicate entries you already have.</div>
+      <div class="backup-row">
+        <button type="button" class="backup-btn primary" id="export-btn">Export backup</button>
+        <button type="button" class="backup-btn" id="import-btn">Import backup</button>
+      </div>
+      <input type="file" id="import-file" accept="application/json,.json">
+      ${importPending ? `
+        <div class="import-confirm">
+          <p>Found <strong>${importPending.ascents.length}</strong> ascent${importPending.ascents.length === 1 ? '' : 's'}${importPending.projects.length ? ` and <strong>${importPending.projects.length}</strong> project${importPending.projects.length === 1 ? '' : 's'}` : ''} in <strong>${escapeHtml(importFileName)}</strong>. How should this be applied to your current log?</p>
+          <div class="backup-row">
+            <button type="button" class="backup-btn primary" id="merge-btn">Merge in</button>
+            <button type="button" class="backup-btn danger" id="replace-btn">Replace all</button>
+          </div>
+          <div class="backup-row" style="margin-top:8px;">
+            <button type="button" class="backup-btn ghost" id="cancel-import-btn">Cancel</button>
+          </div>
+        </div>
+      ` : ''}
+    </div>
+  </div>`;
+}
+
+function getCragDatabase(crag){
+  if(crag === 'Calabogie') return CALABOGIE_PROBLEMS;
+  return null;
+}
+
+function bucketGrade(g){
+  if(!g) return 'Other';
+  if(g === 'VB') return 'VB';
+  const m = g.match(/^V(\d+)/);
+  if(m){
+    const candidate = 'V' + m[1];
+    return VGRADES.includes(candidate) ? candidate : 'Other';
+  }
+  return 'Other';
+}
+
+function renderCragProgress(){
+  const cragOpts = CRAGS.map(c => `<button type="button" data-progress-crag="${c}" class="${c===progressCrag?'active':''}">${c}</button>`).join('');
+  const db = getCragDatabase(progressCrag);
+  const doneNames = new Set();
+  ascents.forEach(a => {
+    if(a.venue === 'outdoor' && a.crag === progressCrag && (a.status === 'sent' || a.status === 'flash') && a.problemName){
+      doneNames.add(a.problemName.trim());
+    }
+  });
+
+  let body;
+  if(db){
+    const completedList = db.filter(p => doneNames.has(p[0]));
+    const total = db.length;
+    const completed = completedList.length;
+    const pct = total ? Math.round((completed / total) * 100) : 0;
+
+    const gradeTotals = {};
+    db.forEach(p => { const b = bucketGrade(p[1]); gradeTotals[b] = (gradeTotals[b] || 0) + 1; });
+    const gradeDone = {};
+    completedList.forEach(p => { const b = bucketGrade(p[1]); gradeDone[b] = (gradeDone[b] || 0) + 1; });
+
+    const order = [...VGRADES.slice().reverse(), 'Other'];
+    const rows = order.filter(b => gradeTotals[b]).map(b => {
+      const t = gradeTotals[b];
+      const d = gradeDone[b] || 0;
+      const fillPct = Math.round((d / t) * 100);
+      const label = b === 'Other' ? 'Other' : b;
+      return `
+        <div class="prog-row">
+          <div class="prog-grade-label">${label}</div>
+          <div class="prog-track"><div class="prog-fill" style="width:${fillPct}%;"></div></div>
+          <div class="prog-count">${d}/${t}</div>
+        </div>
+      `;
+    }).join('');
+
+    const ringBg = `conic-gradient(var(--moss) ${pct * 3.6}deg, var(--surface-2) ${pct * 3.6}deg)`;
+
+    const completedItems = completedList.slice().sort((a,b) => a[0].localeCompare(b[0]))
+      .map(p => `<li>${escapeHtml(p[0])} — ${escapeHtml(p[1])}</li>`).join('');
+
+    const browseRows = db.slice().sort((a,b) => a[0].localeCompare(b[0])).map(p => {
+      const isDone = doneNames.has(p[0]);
+      return `
+        <div class="browse-row ${isDone ? 'done' : ''}">
+          <span class="browse-name">${escapeHtml(p[0])}<span class="browse-grade">${escapeHtml(p[1])}</span></span>
+          ${isDone ? '<span class="browse-check">✓ Done</span>' : `<button type="button" class="browse-start" data-qs-name="${escapeHtml(p[0])}" data-qs-grade="${escapeHtml(p[1])}" data-qs-crag="${escapeHtml(progressCrag)}">+ Project</button>`}
+        </div>
+      `;
+    }).join('');
+
+    body = `
+      <div class="prog-header">
+        <div class="prog-ring" style="background:${ringBg};">
+          <div class="ring-hole"><div class="num">${pct}%</div><div class="label">done</div></div>
+        </div>
+        <div class="prog-summary">
+          <div class="pct">${completed} / ${total}</div>
+          <div class="sub">problems climbed at ${progressCrag} (Otter Pond)</div>
+        </div>
+      </div>
+      ${rows || '<div class="pyr-empty">No grade data available.</div>'}
+      <details class="completed-details">
+        <summary>View completed problems (${completed})</summary>
+        <ul>${completedItems || '<li>None yet — get out there!</li>'}</ul>
+      </details>
+      <details class="browse-details">
+        <summary>Browse all problems (${db.length}) — start a project from one</summary>
+        <div class="browse-list">${browseRows}</div>
+      </details>
+    `;
+  }else{
+    const counts = {};
+    let loggedCount = 0;
+    ascents.forEach(a => {
+      if(a.venue === 'outdoor' && a.crag === progressCrag && (a.status === 'sent' || a.status === 'flash')){
+        const b = bucketGrade(a.grade);
+        counts[b] = (counts[b] || 0) + 1;
+        loggedCount++;
+      }
+    });
+    const order = [...VGRADES.slice().reverse(), 'Other'];
+    const used = order.filter(b => counts[b]);
+    const maxCount = Math.max(1, ...used.map(b => counts[b]));
+    const rows = used.map(b => {
+      const w = Math.max(10, Math.round((counts[b] / maxCount) * 100));
+      return `<div class="pyr-row"><div class="pyr-grade">${b}</div><div class="pyr-bar-track"><div class="pyr-bar" style="width:${w}%;background:linear-gradient(90deg, var(--rust-dim), var(--rust));"><span>${counts[b]}</span></div></div></div>`;
+    }).join('');
+
+    body = `
+      <div class="no-db-note">No guidebook list loaded for ${progressCrag} yet, so there's no total to measure against — just your own logged sends. Ask Claude to add a problem list for this crag and it'll show full progress here too.</div>
+      ${loggedCount ? `<div class="stat-box" style="margin-bottom:18px;"><div class="num rust">${loggedCount}</div><div class="label">Sends logged at ${progressCrag}</div></div>${rows}` : `<div class="pyr-empty">No sends logged at ${progressCrag} yet.</div>`}
+    `;
+  }
+
+  return `
+  <div class="view ${activeView==='crag'?'active':''}" id="view-crag">
+    <div class="field">
+      <label>Crag</label>
+      <div class="seg">${cragOpts}</div>
+    </div>
+    ${body}
+  </div>`;
+}
+
+function showToast(msg){
+  const t = document.getElementById('toast');
+  if(!t) return;
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 1800);
+}
+
+function exportBackup(){
+  try{
+    const payload = {
+      app: 'beta-ascent-log',
+      exportedAt: new Date().toISOString(),
+      ascents: ascents,
+      projects: projects
+    };
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `beta-backup-${todayISO()}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    showToast('Backup downloaded');
+  }catch(e){
+    showToast('Export failed on this device');
+  }
+}
+
+function readImportFile(file){
+  const reader = new FileReader();
+  reader.onload = () => {
+    try{
+      const parsed = JSON.parse(reader.result);
+      const ascentList = Array.isArray(parsed) ? parsed : Array.isArray(parsed.ascents) ? parsed.ascents : null;
+      const projectList = Array.isArray(parsed.projects) ? parsed.projects : [];
+      if(!ascentList) throw new Error('bad format');
+      importPending = { ascents: ascentList, projects: projectList };
+      importFileName = file.name;
+      render();
+    }catch(e){
+      showToast("Couldn't read that file — is it a Beta backup?");
+    }
+  };
+  reader.onerror = () => showToast("Couldn't read that file");
+  reader.readAsText(file);
+}
+
+function mergeImport(){
+  const existingIds = new Set(ascents.map(a => a.id));
+  let added = 0;
+  importPending.ascents.forEach(a => {
+    if(a && a.id && !existingIds.has(a.id)){
+      ascents.push(a);
+      existingIds.add(a.id);
+      added++;
+    }
+  });
+  const existingProjIds = new Set(projects.map(p => p.id));
+  let addedProj = 0;
+  importPending.projects.forEach(p => {
+    if(p && p.id && !existingProjIds.has(p.id)){
+      projects.push(p);
+      existingProjIds.add(p.id);
+      addedProj++;
+    }
+  });
+  saveAscents();
+  saveProjects();
+  importPending = null;
+  importFileName = '';
+  render();
+  showToast(`Added ${added} ascent${added === 1 ? '' : 's'}, ${addedProj} project${addedProj === 1 ? '' : 's'}`);
+}
+
+function replaceImport(){
+  ascents = importPending.ascents.slice();
+  projects = importPending.projects.slice();
+  saveAscents();
+  saveProjects();
+  importPending = null;
+  importFileName = '';
+  render();
+  showToast('Log replaced from backup');
+}
+
+function cancelImport(){
+  importPending = null;
+  importFileName = '';
+  render();
+}
+
+function renderProjects(){
+  if(openProjectId){
+    const p = projects.find(pr => pr.id === openProjectId);
+    if(p) return renderProjectDetail(p);
+    openProjectId = null;
+  }
+  return renderProjectList();
+}
+
+function projAttemptsTotal(p){
+  let any = false;
+  const sum = (p.sessions || []).reduce((s,sess) => {
+    if(typeof sess.attempts === 'number' && !isNaN(sess.attempts)){ any = true; return s + sess.attempts; }
+    return s;
+  }, 0);
+  return any ? sum : null;
+}
+
+function projLastDate(p){
+  if(!p.sessions || p.sessions.length === 0) return p.createdDate;
+  return p.sessions.reduce((latest, s) => s.date > latest ? s.date : latest, p.sessions[0].date);
+}
+
+function projGradeBadge(p){
+  if(p.venue === 'gym'){
+    const c = gymColorInfo(p.gymColor) || GYM_COLORS[0];
+    return `<div class="grade-badge" style="background:${c.hex};">${c.label}</div>`;
+  }
+  return `<div class="grade-badge boulder-outdoor">${escapeHtml(p.grade || '?')}</div>`;
+}
+
+function renderProjectList(){
+  const filtered = projects.filter(p => p.status === projectsFilter || projectsFilter === 'all')
+    .slice().sort((a,b) => projLastDate(b).localeCompare(projLastDate(a)));
+
+  const cards = filtered.length === 0
+    ? `<div class="empty"><div class="big">No ${projectsFilter === 'all' ? '' : projectsFilter + ' '}projects</div>Start one for the climb you keep coming back to.</div>`
+    : filtered.map(p => {
+        const place = p.venue === 'gym' ? (p.gymName || 'Gym') : `${p.crag}${p.problemName ? ' · ' + p.problemName : ''}`;
+        const sessions = (p.sessions || []).length;
+        const attempts = projAttemptsTotal(p);
+        return `
+          <div class="proj-card" data-open-project="${p.id}">
+            <div class="proj-card-top">
+              <div class="proj-name">${escapeHtml(p.name)}</div>
+              ${projGradeBadge(p)}
+            </div>
+            <div class="proj-meta">
+              <span>${escapeHtml(place)}</span>
+              <span class="tag">${escapeHtml(p.climbType || '—')}</span>
+              <span class="status-badge ${p.status}">${p.status}</span>
+            </div>
+            <div class="proj-stats-line">
+              <span>${sessions} session${sessions === 1 ? '' : 's'}</span>
+              ${attempts !== null ? `<span>${attempts} attempts</span>` : ''}
+              <span>last ${fmtDate(projLastDate(p))}</span>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+  const newForm = showNewProjectForm ? renderNewProjectForm() : '';
+
+  return `
+  <div class="view ${activeView==='projects'?'active':''}" id="view-projects">
+    <div class="proj-toolbar">
+      <div class="filters" style="margin-bottom:0;">
+        <div class="chip ${projectsFilter==='active'?'active':''}" data-pfilter="active">Active</div>
+        <div class="chip ${projectsFilter==='sent'?'active':''}" data-pfilter="sent">Sent</div>
+        <div class="chip ${projectsFilter==='parked'?'active':''}" data-pfilter="parked">Parked</div>
+        <div class="chip ${projectsFilter==='all'?'active':''}" data-pfilter="all">All</div>
+      </div>
+    </div>
+    ${!showNewProjectForm ? `<button type="button" class="new-proj-btn" id="new-proj-toggle" style="width:100%;margin-bottom:16px;">+ New project</button>` : ''}
+    ${newForm}
+    ${cards}
+  </div>`;
+}
+
+function renderNewProjectForm(){
+  const pre = projectPrefill;
+  const typeOptions = CLIMB_TYPES.map(t => `<option value="${t}">${t}</option>`).join('');
+  const gymColorOptions = GYM_COLORS.map(c => `<option value="${c.key}">${c.label} (${c.range})</option>`).join('');
+  const vOptions = VGRADES.map(g => `<option value="${g}" ${pre && pre.grade===g ? 'selected':''}>${g}</option>`).join('');
+  const cragOptions = CRAGS.map(c => `<option value="${c}" ${c===projCragChoice?'selected':''}>${c}</option>`).join('');
+
+  const venueFields = projVenueChoice === 'gym' ? `
+      <div class="field"><label>Gym name</label><input type="text" id="pf-gymname" placeholder="e.g. Movement RiNo"></div>
+      <div class="field"><label>Target grade</label><select id="pf-gymcolor">${gymColorOptions}</select></div>
+  ` : `
+      <div class="field"><label>Crag</label><select id="pf-crag">${cragOptions}</select></div>
+      <div class="field">
+        <label>Problem name</label>
+        <input type="text" id="pf-problem" placeholder="${projCragChoice === 'Calabogie' ? 'Start typing…' : 'e.g. Le Bloc'}"
+          value="${pre ? escapeHtml(pre.name) : ''}"
+          ${projCragChoice === 'Calabogie' ? 'list="calabogie-list-proj"' : ''}>
+        ${projCragChoice === 'Calabogie' ? `<datalist id="calabogie-list-proj">${CALABOGIE_PROBLEMS.map(p => `<option value="${escapeHtml(p[0])}">`).join('')}</datalist>` : ''}
+        <div class="hint" id="proj-problem-hint"></div>
+      </div>
+      <div class="field"><label>Target grade</label><select id="pf-vgrade">${vOptions}</select></div>
+  `;
+
+  return `
+    <form id="new-project-form" class="session-form">
+      <h4>New project</h4>
+      <div class="field"><label>Name</label><input type="text" id="pf-name" placeholder="What are you calling this one?" value="${pre ? escapeHtml(pre.name) : ''}"></div>
+      <div class="field">
+        <label>Venue</label>
+        <div class="seg">
+          <button type="button" data-pvenue="gym" class="${projVenueChoice==='gym'?'active':''}">Gym</button>
+          <button type="button" data-pvenue="outdoor" class="${projVenueChoice==='outdoor'?'active':''}">Outdoor</button>
+        </div>
+      </div>
+      ${venueFields}
+      <div class="field"><label>Climb type</label><select id="pf-climbtype">${typeOptions}</select></div>
+      <div class="backup-row">
+        <button type="submit" class="backup-btn primary">Start project</button>
+        <button type="button" class="backup-btn" id="cancel-new-proj">Cancel</button>
+      </div>
+    </form>
+  `;
+}
+
+function renderProjectDetail(p){
+  if(editingProjectFormOpen){
+    return `
+    <div class="view ${activeView==='projects'?'active':''}" id="view-projects">
+      <button type="button" class="back-link" id="back-to-projects">${iconBack()}Back to projects</button>
+      ${renderEditProjectForm(p)}
+    </div>`;
+  }
+
+  const place = p.venue === 'gym' ? (p.gymName || 'Gym') : `${p.crag}${p.problemName ? ' · ' + p.problemName : ''}`;
+  const sessions = (p.sessions || []).slice().sort((a,b) => b.date.localeCompare(a.date));
+  const attemptsTotal = projAttemptsTotal(p);
+  const firstDate = (p.sessions && p.sessions.length) ? p.sessions.reduce((e,s) => s.date < e ? s.date : e, p.sessions[0].date) : p.createdDate;
+  const daysSpan = Math.max(1, Math.round((new Date(projLastDate(p)) - new Date(firstDate)) / 86400000) + 1);
+
+  const timeline = sessions.length === 0 ? `<div class="pyr-empty">No sessions logged yet — add your first one above.</div>` :
+    sessions.map(s => {
+      const condBits = [s.friction, s.humidity, s.temp].filter(Boolean).join(' · ');
+      return `
+      <div class="session-row ${s.sent ? 'sent-mark' : ''}">
+        <div class="session-top">
+          <span class="session-date">${fmtDate(s.date)}</span>
+          <span style="display:flex;align-items:center;gap:8px;">
+            ${typeof s.attempts === 'number' ? `<span class="session-attempts">${s.attempts} attempt${s.attempts===1?'':'s'}</span>` : ''}
+            <button class="del-session" data-del-session="${s.id}" aria-label="Delete session">×</button>
+          </span>
+        </div>
+        ${s.sent ? `<div class="session-sent-tag">Sent it 🎉</div>` : ''}
+        ${s.note ? `<div class="session-note">${escapeHtml(s.note)}</div>` : ''}
+        ${condBits ? `<div class="cond-tag" style="margin-top:6px;">${escapeHtml(condBits)}</div>` : ''}
+      </div>
+    `;
+    }).join('');
+
+  const confirmDelete = deleteProjectConfirmId === p.id ? `
+    <div class="danger-confirm backup-row">
+      <button type="button" class="backup-btn danger" id="confirm-delete-proj">Yes, delete it</button>
+      <button type="button" class="backup-btn ghost" id="cancel-delete-proj">Cancel</button>
+    </div>
+  ` : '';
+
+  return `
+  <div class="view ${activeView==='projects'?'active':''}" id="view-projects">
+    <button type="button" class="back-link" id="back-to-projects">${iconBack()}Back to projects</button>
+    <div class="proj-detail-header">
+      <div>
+        <div class="proj-name" style="font-size:19px;">${escapeHtml(p.name)}</div>
+        <div class="proj-meta" style="margin-top:7px;">
+          <span>${escapeHtml(place)}</span>
+          <span class="tag">${escapeHtml(p.climbType || '—')}</span>
+          <span class="status-badge ${p.status}">${p.status}</span>
+        </div>
+      </div>
+      ${projGradeBadge(p)}
+    </div>
+
+    <div class="detail-stat-grid">
+      <div class="stat-box"><div class="num">${sessions.length}</div><div class="label">Sessions</div></div>
+      <div class="stat-box"><div class="num rust">${attemptsTotal !== null ? attemptsTotal : '—'}</div><div class="label">Total attempts</div></div>
+      <div class="stat-box"><div class="num amber">${daysSpan}</div><div class="label">Days on project</div></div>
+      <div class="stat-box"><div class="num">${fmtDate(firstDate).split(',')[0]}</div><div class="label">First tried</div></div>
+    </div>
+
+    <form id="session-form" class="session-form">
+      <h4>Log a session</h4>
+      <div class="row2">
+        <div class="field"><label>Date</label><input type="date" id="sf-date" value="${todayISO()}"></div>
+        <div class="field"><label>Attempts (optional)</label><input type="text" id="sf-attempts" inputmode="numeric" placeholder="e.g. 8"></div>
+      </div>
+      <div class="field">
+        <label>Notes</label>
+        <textarea id="sf-note" placeholder="Beta, highpoint, what's blocking you, how it felt…"></textarea>
+      </div>
+      ${p.venue === 'outdoor' ? `
+        <div class="field">
+          <label>Conditions (optional)</label>
+          <div class="row2">
+            <select id="sf-friction"><option value="">Friction</option>${FRICTION_OPTIONS.map(f => `<option value="${f}">${f}</option>`).join('')}</select>
+            <select id="sf-humidity"><option value="">Humidity</option>${HUMIDITY_OPTIONS.map(h => `<option value="${h}">${h}</option>`).join('')}</select>
+          </div>
+          <input type="text" id="sf-temp" placeholder="Temp, e.g. 14°C" style="margin-top:8px;">
+        </div>
+      ` : ''}
+      <div class="checkbox-row">
+        <input type="checkbox" id="sf-sent">
+        <label for="sf-sent">Sent it today 🎉</label>
+      </div>
+      <button type="submit" class="submit-btn">Add session</button>
+    </form>
+
+    <div class="timeline">
+      <h3>Session history</h3>
+      ${timeline}
+    </div>
+
+    <div class="proj-actions">
+      <button type="button" class="backup-btn" id="edit-proj-toggle">Edit details</button>
+      ${p.status === 'active' ? `<button type="button" class="backup-btn" data-set-status="parked">Park</button>` : `<button type="button" class="backup-btn" data-set-status="active">Reopen</button>`}
+      <button type="button" class="backup-btn danger" id="delete-proj-btn">Delete</button>
+    </div>
+    ${confirmDelete}
+  </div>`;
+}
+
+function renderEditProjectForm(p){
+  const typeOptions = CLIMB_TYPES.map(t => `<option value="${t}" ${p.climbType===t?'selected':''}>${t}</option>`).join('');
+  const gymColorOptions = GYM_COLORS.map(c => `<option value="${c.key}" ${p.gymColor===c.key?'selected':''}>${c.label} (${c.range})</option>`).join('');
+  const vOptions = VGRADES.map(g => `<option value="${g}" ${p.grade===g?'selected':''}>${g}</option>`).join('');
+  const cragOptions = CRAGS.map(c => `<option value="${c}" ${c===projCragChoice?'selected':''}>${c}</option>`).join('');
+
+  const venueFields = projVenueChoice === 'gym' ? `
+      <div class="field"><label>Gym name</label><input type="text" id="pf-gymname" value="${escapeHtml(p.gymName||'')}"></div>
+      <div class="field"><label>Target grade</label><select id="pf-gymcolor">${gymColorOptions}</select></div>
+  ` : `
+      <div class="field"><label>Crag</label><select id="pf-crag">${cragOptions}</select></div>
+      <div class="field">
+        <label>Problem name</label>
+        <input type="text" id="pf-problem" value="${escapeHtml(p.problemName||'')}" ${projCragChoice === 'Calabogie' ? 'list="calabogie-list-proj-edit"' : ''}>
+        ${projCragChoice === 'Calabogie' ? `<datalist id="calabogie-list-proj-edit">${CALABOGIE_PROBLEMS.map(pp => `<option value="${escapeHtml(pp[0])}">`).join('')}</datalist>` : ''}
+        <div class="hint" id="proj-problem-hint"></div>
+      </div>
+      <div class="field"><label>Target grade</label><select id="pf-vgrade">${vOptions}</select></div>
+  `;
+
+  return `
+    <form id="edit-project-form" class="session-form">
+      <h4>Edit project details</h4>
+      <div class="field"><label>Name</label><input type="text" id="pf-name" value="${escapeHtml(p.name)}"></div>
+      <div class="field">
+        <label>Venue</label>
+        <div class="seg">
+          <button type="button" data-pvenue="gym" class="${projVenueChoice==='gym'?'active':''}">Gym</button>
+          <button type="button" data-pvenue="outdoor" class="${projVenueChoice==='outdoor'?'active':''}">Outdoor</button>
+        </div>
+      </div>
+      ${venueFields}
+      <div class="field"><label>Climb type</label><select id="pf-climbtype">${typeOptions}</select></div>
+      <div class="backup-row">
+        <button type="submit" class="backup-btn primary">Save changes</button>
+        <button type="button" class="backup-btn" id="cancel-edit-proj">Cancel</button>
+      </div>
+    </form>
+  `;
+}
+
+function createProject(){
+  const name = document.getElementById('pf-name').value.trim();
+  if(!name){ showToast('Give the project a name first'); return; }
+  const base = {
+    id: uid(),
+    name,
+    venue: projVenueChoice,
+    climbType: document.getElementById('pf-climbtype').value,
+    status: 'active',
+    createdDate: todayISO(),
+    sessions: []
+  };
+  if(projVenueChoice === 'gym'){
+    base.gymName = document.getElementById('pf-gymname').value.trim();
+    base.gymColor = document.getElementById('pf-gymcolor').value;
+  }else{
+    base.crag = document.getElementById('pf-crag').value;
+    base.problemName = document.getElementById('pf-problem').value.trim();
+    base.grade = document.getElementById('pf-vgrade').value;
+  }
+  projects.push(base);
+  saveProjects();
+  showNewProjectForm = false;
+  projectPrefill = null;
+  openProjectId = base.id;
+  render();
+  showToast('Project started');
+}
+
+function addSession(p){
+  const date = document.getElementById('sf-date').value || todayISO();
+  const attemptsRaw = document.getElementById('sf-attempts').value.trim();
+  const attemptsNum = attemptsRaw === '' ? undefined : parseInt(attemptsRaw, 10);
+  const note = document.getElementById('sf-note').value.trim();
+  const sentToday = document.getElementById('sf-sent').checked;
+
+  const session = { id: uid(), date, note, sent: sentToday };
+  if(typeof attemptsNum === 'number' && !isNaN(attemptsNum)) session.attempts = attemptsNum;
+  const frictionEl = document.getElementById('sf-friction');
+  const humidityEl = document.getElementById('sf-humidity');
+  const tempEl = document.getElementById('sf-temp');
+  if(frictionEl && frictionEl.value) session.friction = frictionEl.value;
+  if(humidityEl && humidityEl.value) session.humidity = humidityEl.value;
+  if(tempEl && tempEl.value.trim()) session.temp = tempEl.value.trim();
+
+  p.sessions = p.sessions || [];
+  p.sessions.push(session);
+
+  let justSent = false;
+  if(sentToday && p.status !== 'sent'){
+    p.status = 'sent';
+    p.sentDate = date;
+    justSent = true;
+    const ascent = {
+      id: uid(),
+      venue: p.venue,
+      climbType: p.climbType,
+      status: 'sent',
+      date,
+      notes: `Sent project: ${p.name}`
+    };
+    if(p.venue === 'gym'){
+      ascent.gymName = p.gymName;
+      ascent.gymColor = p.gymColor;
+    }else{
+      ascent.crag = p.crag;
+      ascent.problemName = p.problemName;
+      ascent.grade = p.grade;
+    }
+    ascents.push(ascent);
+    saveAscents();
+  }
+
+  saveProjects();
+  render();
+  showToast(justSent ? 'Sent! Logged to your ascent history too 🎉' : 'Session added');
+}
+
+function attachHandlers(){
+  document.querySelectorAll('[data-nav]').forEach(btn => btn.addEventListener('click', () => { activeView = btn.dataset.nav; render(); }));
+  document.querySelectorAll('[data-venue]').forEach(btn => btn.addEventListener('click', () => { venueChoice = btn.dataset.venue; render(); }));
+  document.querySelectorAll('[data-filter]').forEach(el => el.addEventListener('click', () => { historyFilter = el.dataset.filter; render(); }));
+  document.querySelectorAll('[data-pyr]').forEach(btn => btn.addEventListener('click', () => { pyramidMode = btn.dataset.pyr; render(); }));
+  document.querySelectorAll('[data-breakdown]').forEach(btn => btn.addEventListener('click', () => { breakdownMode = btn.dataset.breakdown; render(); }));
+  document.querySelectorAll('[data-progress-crag]').forEach(btn => btn.addEventListener('click', () => { progressCrag = btn.dataset.progressCrag; render(); }));
+
+  /* History: search & sort */
+  const historySearchInput = document.getElementById('history-search');
+  if(historySearchInput){
+    historySearchInput.addEventListener('input', () => {
+      const cursorPos = historySearchInput.selectionStart;
+      historySearch = historySearchInput.value;
+      render();
+      const fresh = document.getElementById('history-search');
+      if(fresh){ fresh.focus(); fresh.setSelectionRange(cursorPos, cursorPos); }
+    });
+  }
+  const historySortSelect = document.getElementById('history-sort');
+  if(historySortSelect) historySortSelect.addEventListener('change', () => { historySort = historySortSelect.value; render(); });
+
+  /* Ascent edit */
+  document.querySelectorAll('[data-edit-ascent]').forEach(btn => btn.addEventListener('click', () => {
+    const a = ascents.find(x => x.id === btn.dataset.editAscent);
+    if(!a) return;
+    editingAscentId = a.id;
+    venueChoice = a.venue;
+    if(a.venue === 'outdoor') cragChoice = a.crag || 'Calabogie';
+    activeView = 'log';
+    render();
+  }));
+  const cancelEditAscent = document.getElementById('cancel-edit-ascent');
+  if(cancelEditAscent) cancelEditAscent.addEventListener('click', () => { editingAscentId = null; activeView = 'history'; render(); });
+
+  /* Quick-start project from Crag Progress */
+  document.querySelectorAll('[data-qs-name]').forEach(btn => btn.addEventListener('click', () => {
+    projectPrefill = { name: btn.dataset.qsName, grade: btn.dataset.qsGrade, crag: btn.dataset.qsCrag };
+    projVenueChoice = 'outdoor';
+    projCragChoice = btn.dataset.qsCrag;
+    showNewProjectForm = true;
+    openProjectId = null;
+    editingProjectFormOpen = false;
+    activeView = 'projects';
+    render();
+    showToast(`Starting a project for ${btn.dataset.qsName}`);
+  }));
+
+  /* Projects: list & filters */
+  document.querySelectorAll('[data-pfilter]').forEach(el => el.addEventListener('click', () => { projectsFilter = el.dataset.pfilter; render(); }));
+  document.querySelectorAll('[data-open-project]').forEach(card => card.addEventListener('click', () => {
+    openProjectId = card.dataset.openProject;
+    editingProjectFormOpen = false;
+    render();
+  }));
+  const backToProjects = document.getElementById('back-to-projects');
+  if(backToProjects) backToProjects.addEventListener('click', () => {
+    openProjectId = null;
+    deleteProjectConfirmId = null;
+    editingProjectFormOpen = false;
+    render();
+  });
+
+  const newProjToggle = document.getElementById('new-proj-toggle');
+  if(newProjToggle) newProjToggle.addEventListener('click', () => { showNewProjectForm = true; render(); });
+  const cancelNewProj = document.getElementById('cancel-new-proj');
+  if(cancelNewProj) cancelNewProj.addEventListener('click', () => { showNewProjectForm = false; projectPrefill = null; render(); });
+
+  document.querySelectorAll('[data-pvenue]').forEach(btn => btn.addEventListener('click', () => { projVenueChoice = btn.dataset.pvenue; render(); }));
+  const pCragSelect = document.getElementById('pf-crag');
+  if(pCragSelect) pCragSelect.addEventListener('change', () => { projCragChoice = pCragSelect.value; render(); });
+  const pProblemInput = document.getElementById('pf-problem');
+  if(pProblemInput && projCragChoice === 'Calabogie'){
+    pProblemInput.addEventListener('input', () => {
+      const match = CALABOGIE_MAP[pProblemInput.value];
+      const hint = document.getElementById('proj-problem-hint');
+      const vSelect = document.getElementById('pf-vgrade');
+      if(match){
+        if(hint) hint.textContent = `Guidebook grade: ${match}`;
+        if(VGRADES.includes(match) && vSelect) vSelect.value = match;
+      }else if(hint){
+        hint.textContent = '';
+      }
+    });
+  }
+  const newProjForm = document.getElementById('new-project-form');
+  if(newProjForm) newProjForm.addEventListener('submit', (e) => { e.preventDefault(); createProject(); });
+
+  /* Project edit details */
+  const editProjToggle = document.getElementById('edit-proj-toggle');
+  if(editProjToggle) editProjToggle.addEventListener('click', () => {
+    const p = projects.find(pr => pr.id === openProjectId);
+    if(!p) return;
+    editingProjectFormOpen = true;
+    projVenueChoice = p.venue;
+    projCragChoice = p.crag || 'Calabogie';
+    render();
+  });
+  const cancelEditProj = document.getElementById('cancel-edit-proj');
+  if(cancelEditProj) cancelEditProj.addEventListener('click', () => { editingProjectFormOpen = false; render(); });
+  const editProjForm = document.getElementById('edit-project-form');
+  if(editProjForm){
+    editProjForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const p = projects.find(pr => pr.id === openProjectId);
+      if(!p) return;
+      p.name = document.getElementById('pf-name').value.trim() || p.name;
+      p.venue = projVenueChoice;
+      p.climbType = document.getElementById('pf-climbtype').value;
+      if(projVenueChoice === 'gym'){
+        p.gymName = document.getElementById('pf-gymname').value.trim();
+        p.gymColor = document.getElementById('pf-gymcolor').value;
+        delete p.crag; delete p.problemName; delete p.grade;
+      }else{
+        p.crag = document.getElementById('pf-crag').value;
+        p.problemName = document.getElementById('pf-problem').value.trim();
+        p.grade = document.getElementById('pf-vgrade').value;
+        delete p.gymName; delete p.gymColor;
+      }
+      saveProjects();
+      editingProjectFormOpen = false;
+      render();
+      showToast('Project updated');
+    });
+  }
+
+  /* Project detail: sessions & status */
+  const sessionForm = document.getElementById('session-form');
+  if(sessionForm && openProjectId){
+    sessionForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const p = projects.find(pr => pr.id === openProjectId);
+      if(p) addSession(p);
+    });
+  }
+  document.querySelectorAll('[data-del-session]').forEach(btn => btn.addEventListener('click', () => {
+    const p = projects.find(pr => pr.id === openProjectId);
+    if(!p) return;
+    p.sessions = (p.sessions || []).filter(s => s.id !== btn.dataset.delSession);
+    saveProjects();
+    render();
+  }));
+  document.querySelectorAll('[data-set-status]').forEach(btn => btn.addEventListener('click', () => {
+    const p = projects.find(pr => pr.id === openProjectId);
+    if(!p) return;
+    p.status = btn.dataset.setStatus;
+    saveProjects();
+    render();
+    showToast(p.status === 'active' ? 'Project reopened' : 'Project parked');
+  }));
+  const deleteProjBtn = document.getElementById('delete-proj-btn');
+  if(deleteProjBtn) deleteProjBtn.addEventListener('click', () => { deleteProjectConfirmId = openProjectId; render(); });
+  const confirmDeleteProj = document.getElementById('confirm-delete-proj');
+  if(confirmDeleteProj) confirmDeleteProj.addEventListener('click', () => {
+    projects = projects.filter(pr => pr.id !== openProjectId);
+    saveProjects();
+    openProjectId = null;
+    deleteProjectConfirmId = null;
+    render();
+    showToast('Project deleted');
+  });
+  const cancelDeleteProj = document.getElementById('cancel-delete-proj');
+  if(cancelDeleteProj) cancelDeleteProj.addEventListener('click', () => { deleteProjectConfirmId = null; render(); });
+  document.querySelectorAll('[data-del]').forEach(btn => btn.addEventListener('click', () => {
+    ascents = ascents.filter(a => a.id !== btn.dataset.del);
+    saveAscents();
+    render();
+  }));
+
+  const cragSelect = document.getElementById('f-crag');
+  if(cragSelect){
+    cragSelect.addEventListener('change', () => { cragChoice = cragSelect.value; render(); });
+  }
+
+  const exportBtn = document.getElementById('export-btn');
+  if(exportBtn) exportBtn.addEventListener('click', exportBackup);
+
+  const importBtn = document.getElementById('import-btn');
+  const importFile = document.getElementById('import-file');
+  if(importBtn && importFile){
+    importBtn.addEventListener('click', () => importFile.click());
+    importFile.addEventListener('change', () => {
+      if(importFile.files && importFile.files[0]){
+        readImportFile(importFile.files[0]);
+      }
+    });
+  }
+
+  const mergeBtn = document.getElementById('merge-btn');
+  if(mergeBtn) mergeBtn.addEventListener('click', mergeImport);
+  const replaceBtn = document.getElementById('replace-btn');
+  if(replaceBtn) replaceBtn.addEventListener('click', replaceImport);
+  const cancelImportBtn = document.getElementById('cancel-import-btn');
+  if(cancelImportBtn) cancelImportBtn.addEventListener('click', cancelImport);
+
+  const problemInput = document.getElementById('f-problem');
+  if(problemInput && cragChoice === 'Calabogie'){
+    problemInput.addEventListener('input', () => {
+      const match = CALABOGIE_MAP[problemInput.value];
+      const hint = document.getElementById('problem-hint');
+      const vSelect = document.getElementById('f-vgrade');
+      if(match){
+        if(hint) hint.textContent = `Guidebook grade: ${match}`;
+        if(VGRADES.includes(match) && vSelect) vSelect.value = match;
+      }else if(hint){
+        hint.textContent = '';
+      }
+    });
+  }
+
+  const form = document.getElementById('ascent-form');
+  if(form){
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const fields = {
+        venue: venueChoice,
+        climbType: document.getElementById('f-climbtype').value,
+        status: document.getElementById('f-status').value,
+        date: document.getElementById('f-date').value || todayISO(),
+        notes: document.getElementById('f-notes').value.trim()
+      };
+      if(venueChoice === 'gym'){
+        fields.gymName = document.getElementById('f-gymname').value.trim();
+        fields.gymColor = document.getElementById('f-gymcolor').value;
+      }else{
+        fields.crag = document.getElementById('f-crag').value;
+        fields.problemName = document.getElementById('f-problem').value.trim();
+        fields.grade = document.getElementById('f-vgrade').value;
+        const frictionEl = document.getElementById('f-friction');
+        const humidityEl = document.getElementById('f-humidity');
+        const tempEl = document.getElementById('f-temp');
+        if(frictionEl && frictionEl.value) fields.friction = frictionEl.value;
+        if(humidityEl && humidityEl.value) fields.humidity = humidityEl.value;
+        if(tempEl && tempEl.value.trim()) fields.temp = tempEl.value.trim();
+      }
+
+      if(editingAscentId){
+        const existing = ascents.find(a => a.id === editingAscentId);
+        if(existing){
+          delete existing.gymName; delete existing.gymColor; delete existing.crag;
+          delete existing.problemName; delete existing.grade;
+          delete existing.friction; delete existing.humidity; delete existing.temp;
+          Object.assign(existing, fields);
+        }
+        editingAscentId = null;
+        saveAscents();
+        activeView = 'history';
+        render();
+        showToast('Ascent updated');
+      }else{
+        ascents.push({ id: uid(), ...fields });
+        saveAscents();
+        activeView = 'history';
+        render();
+        showToast(storageOk ? 'Ascent logged' : 'Logged for this session only — storage unavailable');
+      }
+    });
+  }
+}
+
+loadAscents();
+loadProjects();
+render();
+
+if('serviceWorker' in navigator){
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js').catch(() => {});
+  });
+}
+
+</script>
+</body>
+</html>
