@@ -4,14 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
 <title>Beta — Ascent Log</title>
-<link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#15140F">
-<meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Beta">
-<link rel="apple-touch-icon" href="icon-192.png">
-<link rel="icon" href="icon-192.png" type="image/png">
 <style>
 :root{
   --bg:#15140F;
@@ -315,6 +307,25 @@ input:focus, select:focus, textarea:focus{outline:none;border-color:var(--rust);
   padding:4px 9px;font-size:11px;font-family:var(--font-body);cursor:pointer;white-space:nowrap;
 }
 
+.wish-star{
+  background:none;border:1px solid var(--line);border-radius:7px;padding:3px 7px;
+  font-size:13px;color:var(--muted);cursor:pointer;line-height:1;flex-shrink:0;
+}
+.wish-star.active{color:var(--amber);border-color:var(--amber);background:rgba(210,162,58,0.1);}
+.wish-remove{background:none;border:none;color:var(--muted);font-size:15px;cursor:pointer;padding:0 4px;flex-shrink:0;}
+.wish-row-actions{display:flex;align-items:center;gap:6px;}
+.wish-add-row{display:flex;gap:8px;margin-top:12px;}
+.wish-add-row input{flex:1;}
+.wish-add-row select{width:auto;flex-shrink:0;min-width:90px;}
+.wish-add-row button{flex-shrink:0;}
+.wish-section-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;}
+.wish-section-head h3{font-family:var(--font-display);font-size:15px;margin:0;font-weight:600;}
+
+.day-note-card{
+  background:var(--surface-2);border-left:3px solid var(--amber);border-radius:8px;
+  padding:10px 12px;margin-bottom:10px;font-size:13px;color:#C9C2B2;font-style:italic;line-height:1.4;
+}
+
 .backup-section{
   margin-top:28px;
   padding-top:18px;
@@ -467,6 +478,11 @@ let editingProjectFormOpen = false;
 let projectPrefill = null;
 let historySearch = '';
 let historySort = 'newest';
+let wishlist = [];
+const WISHLIST_KEY = 'crux-wishlist-v1';
+let dayNotes = [];
+const DAYNOTES_KEY = 'crux-daynotes-v1';
+let dayNoteDate = todayISO();
 
 function gymColorIndex(key){ return GYM_COLORS.findIndex(c => c.key === key); }
 function gymColorInfo(key){ return GYM_COLORS.find(c => c.key === key); }
@@ -532,6 +548,46 @@ function saveProjects(){
     storageOk = false;
   }
 }
+
+function loadWishlist(){
+  try{
+    const raw = localStorage.getItem(WISHLIST_KEY);
+    wishlist = raw ? JSON.parse(raw) : [];
+  }catch(e){
+    wishlist = [];
+  }
+}
+function saveWishlist(){
+  try{
+    localStorage.setItem(WISHLIST_KEY, JSON.stringify(wishlist));
+  }catch(e){
+    storageOk = false;
+  }
+}
+function isWishlisted(crag, name){ return wishlist.some(w => w.crag === crag && w.name === name); }
+function toggleWishlist(crag, name, grade){
+  const idx = wishlist.findIndex(w => w.crag === crag && w.name === name);
+  if(idx >= 0){ wishlist.splice(idx, 1); } else { wishlist.push({ id: uid(), crag, name, grade: grade || '' }); }
+  saveWishlist();
+}
+function wishCountForCrag(crag){ return wishlist.filter(w => w.crag === crag).length; }
+
+function loadDayNotes(){
+  try{
+    const raw = localStorage.getItem(DAYNOTES_KEY);
+    dayNotes = raw ? JSON.parse(raw) : [];
+  }catch(e){
+    dayNotes = [];
+  }
+}
+function saveDayNotes(){
+  try{
+    localStorage.setItem(DAYNOTES_KEY, JSON.stringify(dayNotes));
+  }catch(e){
+    storageOk = false;
+  }
+}
+function getDayNote(date){ return dayNotes.find(d => d.date === date); }
 
 /* ---------- Activity / streaks ---------- */
 function getActivityCounts(){
@@ -680,8 +736,22 @@ function renderLog(){
       </div>
   `;
 
+  const existingDayNote = getDayNote(dayNoteDate);
+
   return `
   <div class="view ${activeView==='log'?'active':''}" id="view-log">
+    <div class="session-form">
+      <h4>Session note</h4>
+      <div class="field"><label>Date</label><input type="date" id="dn-date" value="${dayNoteDate}"></div>
+      <div class="field">
+        <label>How'd it go / how are you feeling?</label>
+        <textarea id="dn-text" placeholder="Energy, motivation, soreness, weather, anything worth remembering about today…">${existingDayNote ? escapeHtml(existingDayNote.note) : ''}</textarea>
+      </div>
+      <div class="backup-row">
+        <button type="button" class="backup-btn primary" id="save-day-note">Save note</button>
+        ${existingDayNote ? `<button type="button" class="backup-btn danger" id="clear-day-note">Clear</button>` : ''}
+      </div>
+    </div>
     ${editingAscent ? `<div class="hint" style="margin-bottom:14px;">Editing an ascent from ${fmtDate(editingAscent.date)}</div>` : ''}
     <form id="ascent-form">
       <div class="field">
@@ -741,12 +811,16 @@ function renderHistory(){
   }else if(dateSortable){
     const groups = {};
     list.forEach(a => { (groups[a.date] = groups[a.date] || []).push(a); });
-    body = Object.keys(groups).map(date => `
+    body = Object.keys(groups).map(date => {
+      const note = getDayNote(date);
+      return `
       <div class="day-group">
         <div class="day-label">${fmtDate(date)}</div>
+        ${note ? `<div class="day-note-card">🗒 ${escapeHtml(note.note)}</div>` : ''}
         ${groups[date].map(a => cardHtml(a, false)).join('')}
       </div>
-    `).join('');
+    `;
+    }).join('');
   }else{
     body = list.map(a => cardHtml(a, true)).join('');
   }
@@ -958,6 +1032,31 @@ function renderCragProgress(){
     }
   });
 
+  const wishItems = wishlist.filter(w => w.crag === progressCrag);
+  const wishRows = wishItems.slice().sort((a,b) => a.name.localeCompare(b.name)).map(w => {
+    const isDone = doneNames.has(w.name);
+    return `
+      <div class="browse-row">
+        <span class="browse-name">${escapeHtml(w.name)}${w.grade ? `<span class="browse-grade">${escapeHtml(w.grade)}</span>` : ''}</span>
+        <div class="wish-row-actions">
+          ${isDone ? '<span class="browse-check">✓ Done</span>' : `<button type="button" class="browse-start" data-qs-name="${escapeHtml(w.name)}" data-qs-grade="${escapeHtml(w.grade||'')}" data-qs-crag="${escapeHtml(progressCrag)}">+ Project</button>`}
+          <button type="button" class="wish-remove" data-wish-remove="${w.id}" aria-label="Remove from wishlist">×</button>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  const wishlistSection = `
+    <div class="wish-section-head"><h3>★ Wishlist${wishItems.length ? ` (${wishItems.length})` : ''}</h3></div>
+    ${wishItems.length ? `<div class="browse-list" style="margin-bottom:4px;">${wishRows}</div>` : `<div class="pyr-empty" style="padding:14px 0;">No wishlist climbs yet for ${progressCrag}.${db ? ' Star one in the list below, or add it here:' : ' Add one below:'}</div>`}
+    <div class="wish-add-row">
+      <input type="text" id="wish-add-name" placeholder="Problem name" ${progressCrag === 'Calabogie' ? 'list="calabogie-list-wish"' : ''}>
+      ${progressCrag === 'Calabogie' ? `<datalist id="calabogie-list-wish">${CALABOGIE_PROBLEMS.map(p => `<option value="${escapeHtml(p[0])}">`).join('')}</datalist>` : ''}
+      <select id="wish-add-grade"><option value="">Grade</option>${VGRADES.map(g => `<option value="${g}">${g}</option>`).join('')}</select>
+      <button type="button" class="backup-btn primary" id="wish-add-btn">+ Add</button>
+    </div>
+  `;
+
   let body;
   if(db){
     const completedList = db.filter(p => doneNames.has(p[0]));
@@ -992,10 +1091,14 @@ function renderCragProgress(){
 
     const browseRows = db.slice().sort((a,b) => a[0].localeCompare(b[0])).map(p => {
       const isDone = doneNames.has(p[0]);
+      const starred = isWishlisted(progressCrag, p[0]);
       return `
         <div class="browse-row ${isDone ? 'done' : ''}">
           <span class="browse-name">${escapeHtml(p[0])}<span class="browse-grade">${escapeHtml(p[1])}</span></span>
-          ${isDone ? '<span class="browse-check">✓ Done</span>' : `<button type="button" class="browse-start" data-qs-name="${escapeHtml(p[0])}" data-qs-grade="${escapeHtml(p[1])}" data-qs-crag="${escapeHtml(progressCrag)}">+ Project</button>`}
+          <div class="wish-row-actions">
+            <button type="button" class="wish-star ${starred ? 'active' : ''}" data-wish-toggle data-wish-crag="${escapeHtml(progressCrag)}" data-wish-name="${escapeHtml(p[0])}" data-wish-grade="${escapeHtml(p[1])}" aria-label="Star">★</button>
+            ${isDone ? '<span class="browse-check">✓ Done</span>' : `<button type="button" class="browse-start" data-qs-name="${escapeHtml(p[0])}" data-qs-grade="${escapeHtml(p[1])}" data-qs-crag="${escapeHtml(progressCrag)}">+ Project</button>`}
+          </div>
         </div>
       `;
     }).join('');
@@ -1016,7 +1119,7 @@ function renderCragProgress(){
         <ul>${completedItems || '<li>None yet — get out there!</li>'}</ul>
       </details>
       <details class="browse-details">
-        <summary>Browse all problems (${db.length}) — start a project from one</summary>
+        <summary>Browse all problems (${db.length}) — star or start a project from one</summary>
         <div class="browse-list">${browseRows}</div>
       </details>
     `;
@@ -1050,7 +1153,8 @@ function renderCragProgress(){
       <label>Crag</label>
       <div class="seg">${cragOpts}</div>
     </div>
-    ${body}
+    ${wishlistSection}
+    <div style="margin-top:24px;">${body}</div>
   </div>`;
 }
 
@@ -1068,7 +1172,9 @@ function exportBackup(){
       app: 'beta-ascent-log',
       exportedAt: new Date().toISOString(),
       ascents: ascents,
-      projects: projects
+      projects: projects,
+      wishlist: wishlist,
+      dayNotes: dayNotes
     };
     const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
@@ -1092,8 +1198,10 @@ function readImportFile(file){
       const parsed = JSON.parse(reader.result);
       const ascentList = Array.isArray(parsed) ? parsed : Array.isArray(parsed.ascents) ? parsed.ascents : null;
       const projectList = Array.isArray(parsed.projects) ? parsed.projects : [];
+      const wishlistList = Array.isArray(parsed.wishlist) ? parsed.wishlist : [];
+      const dayNotesList = Array.isArray(parsed.dayNotes) ? parsed.dayNotes : [];
       if(!ascentList) throw new Error('bad format');
-      importPending = { ascents: ascentList, projects: projectList };
+      importPending = { ascents: ascentList, projects: projectList, wishlist: wishlistList, dayNotes: dayNotesList };
       importFileName = file.name;
       render();
     }catch(e){
@@ -1123,8 +1231,24 @@ function mergeImport(){
       addedProj++;
     }
   });
+  const existingWishKeys = new Set(wishlist.map(w => w.crag + '|' + w.name));
+  (importPending.wishlist || []).forEach(w => {
+    if(w && w.crag && w.name && !existingWishKeys.has(w.crag + '|' + w.name)){
+      wishlist.push({ id: w.id || uid(), crag: w.crag, name: w.name, grade: w.grade || '' });
+      existingWishKeys.add(w.crag + '|' + w.name);
+    }
+  });
+  const existingNoteDates = new Set(dayNotes.map(d => d.date));
+  (importPending.dayNotes || []).forEach(d => {
+    if(d && d.date && !existingNoteDates.has(d.date)){
+      dayNotes.push({ id: d.id || uid(), date: d.date, note: d.note || '' });
+      existingNoteDates.add(d.date);
+    }
+  });
   saveAscents();
   saveProjects();
+  saveWishlist();
+  saveDayNotes();
   importPending = null;
   importFileName = '';
   render();
@@ -1134,8 +1258,12 @@ function mergeImport(){
 function replaceImport(){
   ascents = importPending.ascents.slice();
   projects = importPending.projects.slice();
+  wishlist = (importPending.wishlist || []).slice();
+  dayNotes = (importPending.dayNotes || []).slice();
   saveAscents();
   saveProjects();
+  saveWishlist();
+  saveDayNotes();
   importPending = null;
   importFileName = '';
   render();
@@ -1502,6 +1630,62 @@ function attachHandlers(){
   document.querySelectorAll('[data-breakdown]').forEach(btn => btn.addEventListener('click', () => { breakdownMode = btn.dataset.breakdown; render(); }));
   document.querySelectorAll('[data-progress-crag]').forEach(btn => btn.addEventListener('click', () => { progressCrag = btn.dataset.progressCrag; render(); }));
 
+  /* Day notes */
+  const dnDate = document.getElementById('dn-date');
+  if(dnDate) dnDate.addEventListener('change', () => { dayNoteDate = dnDate.value || todayISO(); render(); });
+  const saveDayNoteBtn = document.getElementById('save-day-note');
+  if(saveDayNoteBtn){
+    saveDayNoteBtn.addEventListener('click', () => {
+      const date = document.getElementById('dn-date').value || todayISO();
+      const text = document.getElementById('dn-text').value.trim();
+      const existing = dayNotes.find(d => d.date === date);
+      if(!text){
+        if(existing){ dayNotes = dayNotes.filter(d => d.date !== date); saveDayNotes(); render(); showToast('Note cleared'); }
+        return;
+      }
+      if(existing){ existing.note = text; } else { dayNotes.push({ id: uid(), date, note: text }); }
+      saveDayNotes();
+      dayNoteDate = date;
+      render();
+      showToast('Day note saved');
+    });
+  }
+  const clearDayNoteBtn = document.getElementById('clear-day-note');
+  if(clearDayNoteBtn){
+    clearDayNoteBtn.addEventListener('click', () => {
+      const date = document.getElementById('dn-date').value || todayISO();
+      dayNotes = dayNotes.filter(d => d.date !== date);
+      saveDayNotes();
+      render();
+      showToast('Note cleared');
+    });
+  }
+
+  /* Wishlist */
+  document.querySelectorAll('[data-wish-toggle]').forEach(btn => btn.addEventListener('click', () => {
+    toggleWishlist(btn.dataset.wishCrag, btn.dataset.wishName, btn.dataset.wishGrade);
+    render();
+  }));
+  document.querySelectorAll('[data-wish-remove]').forEach(btn => btn.addEventListener('click', () => {
+    wishlist = wishlist.filter(w => w.id !== btn.dataset.wishRemove);
+    saveWishlist();
+    render();
+  }));
+  const wishAddBtn = document.getElementById('wish-add-btn');
+  if(wishAddBtn){
+    wishAddBtn.addEventListener('click', () => {
+      const nameInput = document.getElementById('wish-add-name');
+      const gradeSelect = document.getElementById('wish-add-grade');
+      const name = nameInput.value.trim();
+      if(!name){ showToast('Enter a problem name first'); return; }
+      if(isWishlisted(progressCrag, name)){ showToast('Already on your wishlist'); return; }
+      wishlist.push({ id: uid(), crag: progressCrag, name, grade: gradeSelect.value || '' });
+      saveWishlist();
+      render();
+      showToast('Added to wishlist');
+    });
+  }
+
   /* History: search & sort */
   const historySearchInput = document.getElementById('history-search');
   if(historySearchInput){
@@ -1756,14 +1940,9 @@ function attachHandlers(){
 
 loadAscents();
 loadProjects();
+loadWishlist();
+loadDayNotes();
 render();
-
-if('serviceWorker' in navigator){
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('sw.js').catch(() => {});
-  });
-}
-
 </script>
 </body>
 </html>
